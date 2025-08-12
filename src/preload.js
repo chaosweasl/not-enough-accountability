@@ -1,11 +1,18 @@
 const { contextBridge, ipcRenderer } = require("electron");
 
-// Expose protected methods that allow the renderer process to use
-// the ipcRenderer without exposing the entire object
+// Helper to add event listeners safely (removes previous to avoid duplicates)
+const safeOn = (channel, callback) => {
+  ipcRenderer.removeAllListeners(channel);
+  ipcRenderer.on(channel, (event, ...args) => callback(...args));
+};
+
+// Expose API to renderer
 contextBridge.exposeInMainWorld("electronAPI", {
   // Settings management
   getSettings: () => ipcRenderer.invoke("get-settings"),
   saveSettings: (settings) => ipcRenderer.invoke("save-settings", settings),
+
+  setCheckedIn: (checked) => ipcRenderer.invoke("set-checked-in", checked),
 
   // Process monitoring
   startMonitoring: () => ipcRenderer.invoke("start-monitoring"),
@@ -15,15 +22,33 @@ contextBridge.exposeInMainWorld("electronAPI", {
   pauseMonitoringWithReason: (reason, minutes) =>
     ipcRenderer.invoke("pause-monitoring-with-reason", reason, minutes),
   getMonitoringStatus: () => ipcRenderer.invoke("get-monitoring-status"),
+  getCheckedInStatus: () => ipcRenderer.invoke("get-checked-in-status"),
   getRunningProcesses: () => ipcRenderer.invoke("get-running-processes"),
 
   // Discord integration
   sendDiscordMessage: (message) =>
     ipcRenderer.invoke("send-discord-message", message),
-  testDiscordWebhook: (webhook) =>
-    ipcRenderer.invoke("test-discord-webhook", webhookUrl),
 
-  // File operations
+  // testDiscordWebhook returns either { ok:true } or an object with error info.
+  // For backward compatibility it also returns boolean when main returns a boolean.
+  testDiscordWebhook: async (webhook) => {
+    try {
+      const res = await ipcRenderer.invoke("test-discord-webhook", webhook);
+      // if main returns a plain boolean (old behavior)
+      if (typeof res === "boolean") return { ok: res };
+      // if main returns an object with ok/status/body/error
+      if (res && typeof res === "object") return res;
+      // otherwise normalize
+      return { ok: !!res };
+    } catch (err) {
+      return {
+        ok: false,
+        error: err && err.message ? err.message : String(err),
+      };
+    }
+  },
+
+  // File operations (may be unimplemented in main; safe to call)
   exportLog: (logData) => ipcRenderer.invoke("export-log", logData),
   importSettings: () => ipcRenderer.invoke("import-settings"),
   exportSettings: (settings) => ipcRenderer.invoke("export-settings", settings),
@@ -35,7 +60,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
   setAutoStart: (enable) => ipcRenderer.invoke("set-auto-start", enable),
   getAutoStartStatus: () => ipcRenderer.invoke("get-auto-start-status"),
 
-  // Time and scheduling
+  // Time and scheduling (may be unimplemented)
   getCurrentTime: () => ipcRenderer.invoke("get-current-time"),
   scheduleCheckIn: (time) => ipcRenderer.invoke("schedule-check-in", time),
   scheduleCheckOut: (time) => ipcRenderer.invoke("schedule-check-out", time),
@@ -60,102 +85,59 @@ contextBridge.exposeInMainWorld("electronAPI", {
   checkForUpdates: () => ipcRenderer.invoke("check-for-updates"),
   installUpdate: () => ipcRenderer.invoke("install-update"),
 
-  // Event listeners for main process events
-  onViolationDetected: (callback) => {
-    ipcRenderer.removeAllListeners("violation-detected");
-    ipcRenderer.on("violation-detected", (event, data) => callback(data));
-  },
-
-  onTriggerCheckin: (callback) => {
-    ipcRenderer.removeAllListeners("trigger-checkin");
-    ipcRenderer.on("trigger-checkin", (event, data) => callback(data));
-  },
-
-  onTriggerCheckout: (callback) => {
-    ipcRenderer.removeAllListeners("trigger-checkout");
-    ipcRenderer.on("trigger-checkout", (event, data) => callback(data));
-  },
-
-  onSettingsChanged: (callback) => {
-    ipcRenderer.removeAllListeners("settings-changed");
-    ipcRenderer.on("settings-changed", (event, settings) => callback(settings));
-  },
-
-  onMonitoringStatusChanged: (callback) => {
-    ipcRenderer.removeAllListeners("monitoring-status-changed");
-    ipcRenderer.on("monitoring-status-changed", (event, status) =>
-      callback(status)
-    );
-  },
-
-  onScheduledEvent: (callback) => {
-    ipcRenderer.removeAllListeners("scheduled-event");
-    ipcRenderer.on("scheduled-event", (event, data) => callback(data));
-  },
-
-  onSystemNotification: (callback) => {
-    ipcRenderer.removeAllListeners("system-notification");
-    ipcRenderer.on("system-notification", (event, data) => callback(data));
-  },
-
-  onAppUpdate: (callback) => {
-    ipcRenderer.removeAllListeners("app-update");
-    ipcRenderer.on("app-update", (event, data) => callback(data));
-  },
-
-  onRequestQuitReason: (callback) => {
-    ipcRenderer.removeAllListeners("request-quit-reason");
-    ipcRenderer.on("request-quit-reason", (event, data) => callback(data));
-  },
+  // Event listeners for main process events (use safe callbacks)
+  onViolationDetected: (callback) => safeOn("violation-detected", callback),
+  onTriggerCheckin: (callback) => safeOn("trigger-checkin", callback),
+  onTriggerCheckout: (callback) => safeOn("trigger-checkout", callback),
+  onSettingsChanged: (callback) => safeOn("settings-changed", callback),
+  onMonitoringStatusChanged: (callback) =>
+    safeOn("monitoring-status-changed", callback),
+  onCheckedInStatusChanged: (callback) =>
+    safeOn("checked-in-status-changed", callback),
+  onScheduledEvent: (callback) => safeOn("scheduled-event", callback),
+  onSystemNotification: (callback) => safeOn("system-notification", callback),
+  onAppUpdate: (callback) => safeOn("app-update", callback),
+  onRequestQuitReason: (callback) => safeOn("request-quit-reason", callback),
 
   // Auto-updater events
-  onUpdateAvailable: (callback) => {
-    ipcRenderer.removeAllListeners("update-available");
-    ipcRenderer.on("update-available", (event, info) => callback(info));
-  },
+  onUpdateAvailable: (callback) => safeOn("update-available", callback),
+  onDownloadProgress: (callback) => safeOn("download-progress", callback),
+  onUpdateDownloaded: (callback) => safeOn("update-downloaded", callback),
 
-  onDownloadProgress: (callback) => {
-    ipcRenderer.removeAllListeners("download-progress");
-    ipcRenderer.on("download-progress", (event, progress) =>
-      callback(progress)
-    );
-  },
+  // Monitoring-specific events (sent by main in the updated index.js)
+  onMonitoringStarted: (callback) => safeOn("monitoring-started", callback),
+  onMonitoringStopped: (callback) => safeOn("monitoring-stopped", callback),
+  onLateCheckin: (callback) => safeOn("late-checkin", callback),
+  onTrayNotification: (callback) => safeOn("tray-notification", callback),
 
-  onUpdateDownloaded: (callback) => {
-    ipcRenderer.removeAllListeners("update-downloaded");
-    ipcRenderer.on("update-downloaded", (event, info) => callback(info));
-  },
-
-  // Process-specific monitoring
+  // Process-specific monitoring (may be unimplemented in main)
   isProcessRunning: (processName) =>
     ipcRenderer.invoke("is-process-running", processName),
   getProcessInfo: (processName) =>
     ipcRenderer.invoke("get-process-info", processName),
   killProcess: (processName) => ipcRenderer.invoke("kill-process", processName),
 
-  // Window title monitoring (for detecting YouTube, etc.)
+  // Window title monitoring (may be unimplemented)
   getActiveWindowTitle: () => ipcRenderer.invoke("get-active-window-title"),
   startWindowTitleMonitoring: (keywords) =>
     ipcRenderer.invoke("start-window-title-monitoring", keywords),
   stopWindowTitleMonitoring: () =>
     ipcRenderer.invoke("stop-window-title-monitoring"),
 
-  // Screenshot functionality (for evidence)
+  // Screenshot functionality
   takeScreenshot: (options = {}) =>
     ipcRenderer.invoke("take-screenshot", options),
 
-  // Network monitoring
+  // Network / activity monitoring (may be unimplemented)
   startNetworkMonitoring: (urls) =>
     ipcRenderer.invoke("start-network-monitoring", urls),
   stopNetworkMonitoring: () => ipcRenderer.invoke("stop-network-monitoring"),
-
-  // Keyboard/Mouse activity monitoring
   startActivityMonitoring: () =>
     ipcRenderer.invoke("start-activity-monitoring"),
   stopActivityMonitoring: () => ipcRenderer.invoke("stop-activity-monitoring"),
   getLastActivityTime: () => ipcRenderer.invoke("get-last-activity-time"),
 
-  // Website blocking (if you want to implement this)
+  // Website blocking / blocked sites
   addBlockedSite: (url) => ipcRenderer.invoke("add-blocked-site", url),
   removeBlockedSite: (url) => ipcRenderer.invoke("remove-blocked-site", url),
   getBlockedSites: () => ipcRenderer.invoke("get-blocked-sites"),
@@ -180,23 +162,17 @@ contextBridge.exposeInMainWorld("electronAPI", {
     ipcRenderer.invoke("get-activity-log", options),
   clearActivityLog: () => ipcRenderer.invoke("clear-activity-log"),
 
-  // Temporary overrides
+  // Temporary overrides / emergency / performance / custom rules
   setTemporaryOverride: (type, duration, reason) =>
     ipcRenderer.invoke("set-temporary-override", type, duration, reason),
   getActiveOverrides: () => ipcRenderer.invoke("get-active-overrides"),
   cancelOverride: (overrideId) =>
     ipcRenderer.invoke("cancel-override", overrideId),
-
-  // Emergency features
   panicMode: () => ipcRenderer.invoke("panic-mode"),
   enableEmergencyAccess: (duration) =>
     ipcRenderer.invoke("enable-emergency-access", duration),
-
-  // Performance monitoring
   getSystemInfo: () => ipcRenderer.invoke("get-system-info"),
   getAppPerformance: () => ipcRenderer.invoke("get-app-performance"),
-
-  // Custom rules
   addCustomRule: (rule) => ipcRenderer.invoke("add-custom-rule", rule),
   removeCustomRule: (ruleId) =>
     ipcRenderer.invoke("remove-custom-rule", ruleId),
@@ -207,7 +183,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
     if (channel) {
       ipcRenderer.removeAllListeners(channel);
     } else {
-      // Remove all listeners for all channels
+      // common channels to clear
       const channels = [
         "violation-detected",
         "trigger-checkin",
@@ -217,13 +193,245 @@ contextBridge.exposeInMainWorld("electronAPI", {
         "scheduled-event",
         "system-notification",
         "app-update",
+        "update-available",
+        "download-progress",
+        "update-downloaded",
+        "monitoring-started",
+        "monitoring-stopped",
+        "late-checkin",
+        "tray-notification",
+        "request-quit-reason",
       ];
       channels.forEach((ch) => ipcRenderer.removeAllListeners(ch));
     }
   },
 });
 
-// Expose version info
+// Also expose as window.api for backward compatibility with HTML
+contextBridge.exposeInMainWorld("api", {
+  // Core functionality that HTML expects
+  checkIn: async () => {
+    try {
+      // Set checked-in state (main process will handle Discord notifications and auto-start monitoring)
+      await ipcRenderer.invoke("set-checked-in", true);
+      return true;
+    } catch (error) {
+      console.error("Check-in failed:", error);
+      return false;
+    }
+  },
+
+  checkOut: async () => {
+    try {
+      // Stop monitoring first
+      await ipcRenderer.invoke("stop-monitoring");
+
+      // Set checked-out state (main process will handle Discord notifications)
+      await ipcRenderer.invoke("set-checked-in", false);
+
+      return true;
+    } catch (error) {
+      console.error("Check-out failed:", error);
+      return false;
+    }
+  },
+
+  addRestrictedApp: async () => {
+    try {
+      const newAppInput = document.getElementById("newApp");
+      if (!newAppInput) return false;
+
+      const appName = newAppInput.value.trim();
+      if (appName) {
+        const settings = await ipcRenderer.invoke("get-settings");
+        if (!settings.restrictedApps.includes(appName)) {
+          settings.restrictedApps.push(appName);
+          await ipcRenderer.invoke("save-settings", settings);
+          newAppInput.value = ""; // Clear input
+          return true;
+        }
+      }
+      return false;
+    } catch (error) {
+      console.error("Failed to add restricted app:", error);
+      return false;
+    }
+  },
+
+  addKeyword: async () => {
+    try {
+      const newKeywordInput = document.getElementById("newKeyword");
+      if (!newKeywordInput) return false;
+
+      const keyword = newKeywordInput.value.trim();
+      if (keyword) {
+        const settings = await ipcRenderer.invoke("get-settings");
+        if (!settings.monitoringKeywords.includes(keyword.toLowerCase())) {
+          settings.monitoringKeywords.push(keyword.toLowerCase());
+          await ipcRenderer.invoke("save-settings", settings);
+          newKeywordInput.value = ""; // Clear input
+          return true;
+        }
+      }
+      return false;
+    } catch (error) {
+      console.error("Failed to add keyword:", error);
+      return false;
+    }
+  },
+
+  testDiscordNotification: async () => {
+    try {
+      const settings = await ipcRenderer.invoke("get-settings");
+      if (!settings.discordWebhook) {
+        alert("Please set your Discord webhook URL first!");
+        return false;
+      }
+      const result = await ipcRenderer.invoke(
+        "test-discord-webhook",
+        settings.discordWebhook
+      );
+      return result;
+    } catch (error) {
+      console.error("Discord test failed:", error);
+      return false;
+    }
+  },
+
+  saveSettings: async () => {
+    try {
+      const webhookInput = document.getElementById("discordWebhook");
+      const checkInInput = document.getElementById("checkInTime");
+      const checkOutInput = document.getElementById("checkOutTime");
+
+      if (webhookInput && checkInInput && checkOutInput) {
+        const settings = {
+          discordWebhook: webhookInput.value.trim(),
+          checkInTime: checkInInput.value,
+          checkOutTime: checkOutInput.value,
+        };
+        await ipcRenderer.invoke("save-settings", settings);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error("Failed to save settings:", error);
+      return false;
+    }
+  },
+
+  pauseMonitoring: async () => {
+    try {
+      let reason = "User requested pause";
+      let minutes = 60;
+
+      // Try to get values from UI elements first
+      const disableMinutesInput = document.getElementById("disableMinutes");
+      if (disableMinutesInput) {
+        minutes = parseInt(disableMinutesInput.value) || 60;
+      }
+
+      // Fallback to prompt if available
+      try {
+        const userReason = window.prompt("Reason for pausing monitoring:");
+        if (userReason) reason = userReason;
+      } catch (e) {
+        console.warn("prompt() not available, using default reason");
+      }
+
+      await ipcRenderer.invoke("pause-monitoring-with-reason", reason, minutes);
+      return true;
+    } catch (error) {
+      console.error("Failed to pause monitoring:", error);
+      return false;
+    }
+  },
+
+  resumeMonitoring: async () => {
+    try {
+      await ipcRenderer.invoke("start-monitoring");
+      // Discord notification is already sent by startProcessMonitoring in main process
+      return true;
+    } catch (error) {
+      console.error("Failed to resume monitoring:", error);
+      return false;
+    }
+  },
+
+  stopMonitoring: async () => {
+    try {
+      let reason = "User requested stop";
+      try {
+        reason = window.prompt("Reason for stopping monitoring:") || reason;
+      } catch (e) {
+        console.warn("prompt() not available, using default reason");
+      }
+      await ipcRenderer.invoke("stop-monitoring-with-reason", reason);
+      return true;
+    } catch (error) {
+      console.error("Failed to stop monitoring:", error);
+      return false;
+    }
+  },
+
+  temporaryDisable: async () => {
+    try {
+      let reason = "User requested temporary disable";
+      try {
+        reason = window.prompt("Reason for temporary disable:") || reason;
+      } catch (e) {
+        console.warn("prompt() not available, using default reason");
+      }
+      await ipcRenderer.invoke("stop-monitoring-with-reason", reason);
+      return true;
+    } catch (error) {
+      console.error("Failed to disable monitoring:", error);
+      return false;
+    }
+  },
+
+  getMonitoringStatus: async () => {
+    try {
+      return await ipcRenderer.invoke("get-monitoring-status");
+    } catch (error) {
+      console.error("Failed to get monitoring status:", error);
+      return false;
+    }
+  },
+
+  clearLog: async () => {
+    try {
+      await ipcRenderer.invoke("clear-activity-log");
+      return true;
+    } catch (error) {
+      console.error("Failed to clear log:", error);
+      return false;
+    }
+  },
+
+  exportLog: async () => {
+    try {
+      const logData = await ipcRenderer.invoke("get-activity-log");
+      await ipcRenderer.invoke("export-log", logData);
+      return true;
+    } catch (error) {
+      console.error("Failed to export log:", error);
+      return false;
+    }
+  },
+
+  checkForUpdates: async () => {
+    try {
+      await ipcRenderer.invoke("check-for-updates");
+      return true;
+    } catch (error) {
+      console.error("Failed to check for updates:", error);
+      return false;
+    }
+  },
+});
+
+// App / environment info
 contextBridge.exposeInMainWorld("appInfo", {
   platform: process.platform,
   arch: process.arch,
@@ -234,54 +442,28 @@ contextBridge.exposeInMainWorld("appInfo", {
   },
 });
 
-// Utility functions that don't need IPC
+// Small utils exposed to renderer (non-IPC)
 contextBridge.exposeInMainWorld("utils", {
-  // Date/Time utilities
-  formatTime: (date) => {
-    return date.toLocaleTimeString();
-  },
-
-  formatDate: (date) => {
-    return date.toLocaleDateString();
-  },
-
-  formatDateTime: (date) => {
-    return date.toLocaleString();
-  },
-
-  // Duration utilities
+  formatTime: (date) => date.toLocaleTimeString(),
+  formatDate: (date) => date.toLocaleDateString(),
+  formatDateTime: (date) => date.toLocaleString(),
   formatDuration: (milliseconds) => {
     const seconds = Math.floor(milliseconds / 1000);
     const minutes = Math.floor(seconds / 60);
     const hours = Math.floor(minutes / 60);
-
-    if (hours > 0) {
-      return `${hours}h ${minutes % 60}m`;
-    } else if (minutes > 0) {
-      return `${minutes}m ${seconds % 60}s`;
-    } else {
-      return `${seconds}s`;
-    }
+    if (hours > 0) return `${hours}h ${minutes % 60}m`;
+    if (minutes > 0) return `${minutes}m ${seconds % 60}s`;
+    return `${seconds}s`;
   },
-
-  // Time calculations
   timeToMinutes: (timeStr) => {
-    const [hours, minutes] = timeStr.split(":").map(Number);
+    const [hours = 0, minutes = 0] = (timeStr || "0:0").split(":").map(Number);
     return hours * 60 + minutes;
   },
-
   minutesToTime: (minutes) => {
-    const hours = Math.floor(minutes / 60);
+    const hrs = Math.floor(minutes / 60);
     const mins = minutes % 60;
-    return `${hours.toString().padStart(2, "0")}:${mins.toString().padStart(2, "0")}`;
+    return `${String(hrs).padStart(2, "0")}:${String(mins).padStart(2, "0")}`;
   },
-
-  // Validation utilities
-  isValidEmail: (email) => {
-    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return re.test(email);
-  },
-
   isValidUrl: (url) => {
     try {
       new URL(url);
@@ -290,30 +472,17 @@ contextBridge.exposeInMainWorld("utils", {
       return false;
     }
   },
-
-  isValidTime: (timeStr) => {
-    const timeRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;
-    return timeRegex.test(timeStr);
-  },
-
-  // String utilities
-  escapeHtml: (unsafe) => {
-    return unsafe
+  escapeHtml: (unsafe) =>
+    String(unsafe)
       .replace(/&/g, "&amp;")
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#039;");
-  },
-
-  // Array utilities
-  uniqueArray: (arr) => [...new Set(arr)],
-
-  // Object utilities
-  deepClone: (obj) => JSON.parse(JSON.stringify(obj)),
+      .replace(/'/g, "&#039;"),
+  uniqueArray: (arr) => Array.from(new Set(arr)),
 });
 
-// Console logging for debugging (only in development)
+// Dev debug helpers
 if (process.env.NODE_ENV === "development") {
   contextBridge.exposeInMainWorld("debug", {
     log: (...args) => console.log("[Renderer]", ...args),
@@ -322,27 +491,25 @@ if (process.env.NODE_ENV === "development") {
   });
 }
 
-// Window ready notification
+// Notify main that renderer is ready
 window.addEventListener("DOMContentLoaded", () => {
-  // Notify main process that the renderer is ready
   ipcRenderer.send("renderer-ready");
 
-  // Set up global error handling
+  // forward renderer-side uncaught errors to main for centralized logging
   window.addEventListener("error", (event) => {
     ipcRenderer.send("renderer-error", {
       message: event.message,
       filename: event.filename,
       lineno: event.lineno,
       colno: event.colno,
-      error: event.error?.stack,
+      stack: event.error ? event.error.stack : null,
     });
   });
 
-  // Handle unhandled promise rejections
   window.addEventListener("unhandledrejection", (event) => {
     ipcRenderer.send("renderer-error", {
       message: "Unhandled promise rejection",
-      error: event.reason?.stack || event.reason,
+      error: event.reason ? event.reason.stack || event.reason : null,
     });
   });
 });
