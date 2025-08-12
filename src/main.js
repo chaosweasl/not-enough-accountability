@@ -56,7 +56,7 @@ function createWindow() {
       nodeIntegration: false,
       contextIsolation: true,
     },
-    icon: path.join(__dirname, "assets", "icon.png"),
+    icon: path.join(__dirname, "assets", "electron.png"),
     show: false,
   });
   mainWindow.loadFile(path.join(__dirname, "index.html"));
@@ -76,7 +76,7 @@ function createWindow() {
 
 function createTray() {
   const trayIcon = nativeImage.createFromPath(
-    path.join(__dirname, "assets", "tray-icon.png")
+    path.join(__dirname, "assets", "electron.png")
   );
   tray = new Tray(trayIcon.resize({ width: 16, height: 16 }));
   const contextMenu = Menu.buildFromTemplate([
@@ -277,16 +277,17 @@ ipcMain.handle("export-settings", async (event, exportSettings) => {
   return exportPath;
 });
 
-// Auto-start (Windows only, simple registry method)
-ipcMain.handle("set-auto-start", (event, enable) => {
-  const autostart = require("auto-launch");
-  const launcher = new autostart({ name: "AccountabilityApp" });
-  if (enable) launcher.enable();
-  else launcher.disable();
-  return true;
-});
-ipcMain.handle("get-auto-start-status", async () => {
-  const autostart = require("auto-launch");
-  const launcher = new autostart({ name: "AccountabilityApp" });
-  return launcher.isEnabled();
-});
+// Auto-start functionality removed - requires additional dependency
+// To add back: npm install auto-launch, then uncomment below
+// ipcMain.handle("set-auto-start", (event, enable) => {
+//   const autostart = require("auto-launch");
+//   const launcher = new autostart({ name: "AccountabilityApp" });
+//   if (enable) launcher.enable();
+//   else launcher.disable();
+//   return true;
+// });
+// ipcMain.handle("get-auto-start-status", async () => {
+//   const autostart = require("auto-launch");
+//   const launcher = new autostart({ name: "AccountabilityApp" });
+//   return launcher.isEnabled();
+// });

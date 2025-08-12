@@ -12,7 +12,7 @@ module.exports = {
     appBundleId: "com.accountability.app",
     appVersion: process.env.npm_package_version,
     buildVersion: process.env.npm_package_version,
-    icon: "./src/assets/icon", // Will look for icon.ico on Windows, icon.icns on macOS
+    icon: "./src/assets/electron",
     extraResource: ["./README.md", "./CONTRIBUTING.md"],
   },
   rebuildConfig: {},
@@ -37,7 +37,7 @@ module.exports = {
       config: {
         name: "Not Enough Accountability",
         icon: "./src/assets/electron.icns",
-        background: "./src/assets/dmg-background.png",
+        background: "./src/assets/background.png",
         format: "ULFO",
       },
     },
@@ -50,7 +50,7 @@ module.exports = {
           description:
             "Desktop accountability system for monitoring computer usage",
           categories: ["Utility", "Productivity"],
-          icon: "./src/assets/icon.png",
+          icon: "./src/assets/electron.png",
         },
       },
     },
@@ -63,7 +63,7 @@ module.exports = {
           description:
             "Desktop accountability system for monitoring computer usage",
           categories: ["Utility", "Productivity"],
-          icon: "./src/assets/icon.png",
+          icon: "./src/assets/electron.png",
         },
       },
     },
