@@ -53,7 +53,6 @@ Get the latest version from our [Releases page](https://github.com/chaosweasl/no
 
 - **Windows**: Download `Not-Enough-Accountability-Setup.exe`
 - **macOS**: Download `Not-Enough-Accountability.dmg`
-- **Linux**: Download the `.AppImage` file
 
 ### Installation Steps
 
@@ -61,7 +60,6 @@ Get the latest version from our [Releases page](https://github.com/chaosweasl/no
 2. **Install/Run** the application:
    - **Windows**: Double-click the `.exe` file and follow the installer
    - **macOS**: Open the `.dmg` file and drag the app to Applications
-   - **Linux**: Make the `.AppImage` executable and run it
 3. **First launch**: The app will open with a setup wizard
 
 ### ⚠️ Security Warning
@@ -174,9 +172,10 @@ Interested in contributing to the project? Check out our [CONTRIBUTING.md](CONTR
 
 ## 🐛 Known Issues
 
+- **No code certification**: The app will be marked as a potential virus
 - **Tray Icon**: May not display on some systems (functionality still works)
 - **Window Title Detection**: Some applications may not report window titles
-- **macOS/Linux**: Limited testing on non-Windows platforms
+- **macOS**: Limited testing on non-Windows platforms
 
 ## 💡 Future Enhancements
 
