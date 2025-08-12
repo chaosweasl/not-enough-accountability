@@ -1,0 +1,56 @@
+{
+  "name": "not-enough-accountability",
+  "version": "1.0.0",
+  "description": "Desktop accountability system for monitoring computer usage during work hours",
+  "main": "src/index.js",
+  "homepage": "https://github.com/chaosweasl/not-enough-accountability",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/chaosweasl/not-enough-accountability.git"
+  },
+  "bugs": {
+    "url": "https://github.com/chaosweasl/not-enough-accountability/issues"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "electron-forge start",
+    "package": "electron-forge package",
+    "make": "electron-forge make",
+    "publish": "electron-forge publish",
+    "lint": "echo \"No linting configured\"",
+    "release": "npm run make && npm run publish"
+  },
+  "keywords": [
+    "accountability",
+    "productivity",
+    "monitoring",
+    "discord",
+    "electron",
+    "desktop-app"
+  ],
+  "author": {
+    "name": "weasl",
+    "email": "17daniel.dev@gmail.com"
+  },
+  "license": "MIT",
+  "type": "commonjs",
+  "devDependencies": {
+    "@electron-forge/cli": "^7.8.3",
+    "@electron-forge/maker-deb": "^7.8.3",
+    "@electron-forge/maker-dmg": "^7.8.3",
+    "@electron-forge/maker-rpm": "^7.8.3",
+    "@electron-forge/maker-squirrel": "^7.8.3",
+    "@electron-forge/maker-zip": "^7.8.3",
+    "@electron-forge/plugin-auto-unpack-natives": "^7.8.3",
+    "@electron-forge/plugin-fuses": "^7.8.3",
+    "@electron-forge/publisher-github": "^7.8.3",
+    "@electron/fuses": "^1.8.0",
+    "electron": "^37.2.6"
+  },
+  "dependencies": {
+    "electron-squirrel-startup": "^1.0.1",
+    "electron-updater": "^6.1.7",
+    "node-fetch": "^2.7.0"
+  },
+  "productName": "Not Enough Accountability"
+}
