@@ -64,6 +64,23 @@ Get the latest version from our [Releases page](https://github.com/chaosweasl/no
    - **Linux**: Make the `.AppImage` executable and run it
 3. **First launch**: The app will open with a setup wizard
 
+### ⚠️ Security Warning
+
+**Important:** This application is not code-signed, which means your operating system may display security warnings:
+
+- **Windows**: Windows Defender or antivirus software may flag the app as "potentially unwanted" or block installation
+  - Click "More info" → "Run anyway" if Windows SmartScreen blocks it
+  - You may need to temporarily disable real-time protection in Windows Defender
+  - Add the app folder to your antivirus exclusions if needed
+
+- **macOS**: macOS Gatekeeper may prevent opening the app
+  - Right-click the app → "Open" → "Open" to bypass Gatekeeper
+  - Or go to System Preferences → Security & Privacy → "Open Anyway"
+
+- **Why this happens**: Code signing certificates are expensive ($400+/year) for open-source projects
+- **Is it safe?**: Yes! The source code is fully open and auditable on GitHub
+- **Alternative**: Build from source if you prefer (see CONTRIBUTING.md)
+
 ### First Time Setup
 
 1. **Configure Discord Webhook** (Recommended)
