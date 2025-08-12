@@ -13,11 +13,19 @@
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "concurrently \"npm run dev:renderer\" \"npm run dev:electron\"",
+    "dev:renderer": "vite",
+    "dev:electron": "wait-on http://localhost:5173 && NODE_ENV=development electron-forge start",
+    "build": "npm run build:renderer && npm run build:electron",
+    "build:renderer": "vite build",
+    "build:electron": "electron-forge package",
     "start": "electron-forge start",
     "package": "electron-forge package",
-    "make": "electron-forge make",
+    "make": "npm run build && electron-forge make",
     "publish": "electron-forge publish",
-    "lint": "echo \"No linting configured\"",
+    "lint": "echo \"Linting temporarily disabled - TypeScript config needed\"",
+    "lint:fix": "npm run lint -- --fix",
+    "type-check": "tsc --noEmit",
     "release": "npm run make && npm run publish"
   },
   "keywords": [
@@ -45,12 +53,37 @@
     "@electron-forge/plugin-fuses": "^7.8.3",
     "@electron-forge/publisher-github": "^7.8.3",
     "@electron/fuses": "^1.8.0",
-    "electron": "^37.2.6"
+    "@eslint/js": "^9.33.0",
+    "@tailwindcss/postcss": "^4.1.11",
+    "@types/node": "^24.2.1",
+    "@types/react": "^19.1.10",
+    "@types/react-dom": "^19.1.7",
+    "@typescript-eslint/eslint-plugin": "^8.39.1",
+    "@typescript-eslint/parser": "^8.39.1",
+    "@vitejs/plugin-react": "^5.0.0",
+    "autoprefixer": "^10.4.21",
+    "concurrently": "^9.2.0",
+    "electron": "^37.2.6",
+    "eslint": "^9.33.0",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "postcss": "^8.5.6",
+    "prettier": "^3.6.2",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "tailwindcss": "^4.1.11",
+    "typescript": "^5.9.2",
+    "vite": "^7.1.2",
+    "wait-on": "^8.0.4"
   },
   "dependencies": {
+    "clsx": "^2.1.1",
     "electron-squirrel-startup": "^1.0.1",
     "electron-updater": "^6.1.7",
-    "node-fetch": "^2.7.0"
+    "lucide-react": "^0.539.0",
+    "node-fetch": "^2.7.0",
+    "react-hot-toast": "^2.5.2",
+    "zustand": "^5.0.7"
   },
   "productName": "Not Enough Accountability"
 }
