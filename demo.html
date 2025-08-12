@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Accountability Tracker - Modern React UI Demo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            colors: {
+              primary: {
+                50: '#eff6ff',
+                100: '#dbeafe',
+                200: '#bfdbfe',
+                300: '#93c5fd',
+                400: '#60a5fa',
+                500: '#3b82f6',
+                600: '#2563eb',
+                700: '#1d4ed8',
+                800: '#1e40af',
+                900: '#1e3a8a',
+              },
+              success: {
+                50: '#f0fdf4',
+                100: '#dcfce7',
+                200: '#bbf7d0',
+                300: '#86efac',
+                400: '#4ade80',
+                500: '#22c55e',
+                600: '#16a34a',
+                700: '#15803d',
+                800: '#166534',
+                900: '#14532d',
+              }
+            }
+          }
+        }
+      }
+    </script>
+  </head>
+  <body class="bg-gray-50 dark:bg-gray-900">
+    <!-- Header -->
+    <header class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center space-x-4">
+          <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+            🎯 Accountability Tracker
+          </h1>
+          <div class="flex space-x-2">
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-success-100 text-success-800">
+              Checked In
+            </span>
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-primary-100 text-primary-800 animate-pulse">
+              Monitoring Active
+            </span>
+          </div>
+        </div>
+
+        <div class="flex items-center space-x-4">
+          <div class="text-right">
+            <div class="text-lg font-mono text-gray-900 dark:text-white">
+              2:34:56 PM
+            </div>
+            <div class="text-sm text-gray-600 dark:text-gray-400">
+              Session Duration: 2h 15m 32s
+            </div>
+          </div>
+          
+          <button class="p-2 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors">
+            <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clip-rule="evenodd" />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <div class="flex">
+      <!-- Sidebar -->
+      <aside class="w-64 bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 h-screen">
+        <nav class="p-4 space-y-2">
+          <button class="w-full text-left p-3 rounded-lg bg-primary-100 text-primary-900">
+            <div class="flex items-center space-x-3">
+              <div class="text-primary-600">
+                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5a2 2 0 012-2h4a2 2 0 012 2v6H8V5z" />
+                </svg>
+              </div>
+              <div>
+                <div class="font-medium">Dashboard</div>
+                <div class="text-xs text-gray-500 mt-1">Check-in, monitoring controls, and activity overview</div>
+              </div>
+            </div>
+          </button>
+          
+          <button class="w-full text-left p-3 rounded-lg text-gray-700 hover:bg-gray-100">
+            <div class="flex items-center space-x-3">
+              <div class="text-gray-400">
+                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              </div>
+              <div>
+                <div class="font-medium">Settings</div>
+                <div class="text-xs text-gray-500 mt-1">Configure Discord, work hours, and restrictions</div>
+              </div>
+            </div>
+          </button>
+          
+          <button class="w-full text-left p-3 rounded-lg text-gray-700 hover:bg-gray-100">
+            <div class="flex items-center space-x-3">
+              <div class="text-gray-400">
+                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </div>
+              <div>
+                <div class="font-medium">Activity Log</div>
+                <div class="text-xs text-gray-500 mt-1">View violations, export logs, and analytics</div>
+              </div>
+            </div>
+          </button>
+        </nav>
+        
+        <div class="p-4 border-t border-gray-200 dark:border-gray-700 mt-auto">
+          <div class="text-xs text-gray-500 text-center">Version 1.1.0</div>
+        </div>
+      </aside>
+
+      <!-- Main Content -->
+      <main class="flex-1 p-6 space-y-6">
+        <!-- Status Overview -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-sm font-medium text-gray-600">Status</p>
+                <p class="text-2xl font-bold text-gray-900">Checked In</p>
+              </div>
+              <div class="w-3 h-3 rounded-full bg-green-500"></div>
+            </div>
+          </div>
+
+          <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-sm font-medium text-gray-600">Monitoring</p>
+                <p class="text-2xl font-bold text-gray-900">Active</p>
+              </div>
+              <div class="w-3 h-3 rounded-full bg-blue-500 animate-pulse"></div>
+            </div>
+          </div>
+
+          <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-sm font-medium text-gray-600">Today's Violations</p>
+                <p class="text-2xl font-bold text-gray-900">3</p>
+              </div>
+              <div class="text-red-500">
+                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Check-in Controls -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <h2 class="text-lg font-semibold text-gray-900 mb-4">⏰ Daily Check-in/Out</h2>
+          <div class="space-y-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-sm text-gray-600">Work Hours: 08:00 - 16:00</p>
+                <p class="text-xs text-green-600">Currently within work hours</p>
+              </div>
+              <div class="flex space-x-2">
+                <button class="px-4 py-2 bg-green-600 text-white rounded-lg opacity-50 cursor-not-allowed">
+                  Check In
+                </button>
+                <button class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
+                  Check Out
+                </button>
+              </div>
+            </div>
+
+            <div class="p-3 bg-green-50 rounded-lg">
+              <p class="text-sm text-green-800">Checked in at 12:19:24 PM</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Monitoring Controls -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <h2 class="text-lg font-semibold text-gray-900 mb-4">⚙️ Monitoring Controls</h2>
+          <div class="space-y-4">
+            <div class="flex flex-wrap gap-2">
+              <button class="px-4 py-2 bg-green-600 text-white rounded-lg">
+                Monitoring Active
+              </button>
+              <button class="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700">
+                Pause Monitoring
+              </button>
+              <button class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
+                Stop Monitoring
+              </button>
+            </div>
+
+            <div class="p-3 bg-blue-50 rounded-lg">
+              <div class="flex items-center space-x-2">
+                <div class="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                <p class="text-sm text-blue-800">Monitoring active - checking for violations every 5 seconds</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <h2 class="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-2 mb-4">📊 Today's Summary</h2>
+            <div class="space-y-3">
+              <div class="flex justify-between">
+                <span class="text-sm text-gray-600">Violations</span>
+                <span class="text-sm font-medium">3</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-sm text-gray-600">Restricted Apps</span>
+                <span class="text-sm font-medium">4</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-sm text-gray-600">Keywords</span>
+                <span class="text-sm font-medium">8</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-sm text-gray-600">Session Status</span>
+                <span class="text-sm font-medium text-green-600">monitoring</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <h2 class="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-2 mb-4">🚨 Recent Violations</h2>
+            <div class="space-y-2">
+              <div class="flex items-center justify-between p-2 bg-red-50 rounded">
+                <div>
+                  <p class="text-sm font-medium text-red-800">youtube</p>
+                  <p class="text-xs text-red-600">keyword • 5 minutes ago</p>
+                </div>
+                <span class="px-2 py-1 text-xs font-medium bg-red-100 text-red-800 rounded">warned</span>
+              </div>
+              
+              <div class="flex items-center justify-between p-2 bg-red-50 rounded">
+                <div>
+                  <p class="text-sm font-medium text-red-800">steam.exe</p>
+                  <p class="text-xs text-red-600">app • 15 minutes ago</p>
+                </div>
+                <span class="px-2 py-1 text-xs font-medium bg-red-100 text-red-800 rounded">warned</span>
+              </div>
+              
+              <div class="flex items-center justify-between p-2 bg-red-50 rounded">
+                <div>
+                  <p class="text-sm font-medium text-red-800">reddit</p>
+                  <p class="text-xs text-red-600">keyword • 32 minutes ago</p>
+                </div>
+                <span class="px-2 py-1 text-xs font-medium bg-red-100 text-red-800 rounded">warned</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </body>
+</html>
