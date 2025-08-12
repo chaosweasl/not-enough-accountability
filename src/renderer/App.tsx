@@ -3,6 +3,8 @@ import { Toaster } from 'react-hot-toast';
 import { useAppStore } from './hooks/useAppStore';
 import { Header, Sidebar } from './components/layout';
 import Dashboard from './pages/Dashboard';
+import Settings from './pages/Settings';
+import ActivityLog from './pages/ActivityLog';
 import { theme } from './utils';
 
 const App: React.FC = () => {
@@ -22,27 +24,9 @@ const App: React.FC = () => {
       case 'dashboard':
         return <Dashboard />;
       case 'settings':
-        return (
-          <div className="p-8">
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-              Settings
-            </h1>
-            <p className="text-gray-600 dark:text-gray-400">
-              Settings page coming soon...
-            </p>
-          </div>
-        );
+        return <Settings />;
       case 'activity':
-        return (
-          <div className="p-8">
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-              Activity Log
-            </h1>
-            <p className="text-gray-600 dark:text-gray-400">
-              Activity log page coming soon...
-            </p>
-          </div>
-        );
+        return <ActivityLog />;
       default:
         return <Dashboard />;
     }
