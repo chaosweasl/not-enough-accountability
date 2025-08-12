@@ -22,10 +22,10 @@ module.exports = {
       config: {
         name: "not-enough-accountability",
         setupExe: "Not Enough Accountability Setup.exe",
-        setupIcon: "./src/assets/icon.ico",
-        loadingGif: "./src/assets/loading.gif",
-        certificateFile: process.env.CERTIFICATE_FILE,
-        certificatePassword: process.env.CERTIFICATE_PASSWORD,
+        setupIcon: "./src/assets/electron.ico",
+        // certificateFile: process.env.CERTIFICATE_FILE,
+        // certificatePassword: process.env.CERTIFICATE_PASSWORD,
+        // no certificate :(
       },
     },
     {
@@ -36,7 +36,7 @@ module.exports = {
       name: "@electron-forge/maker-dmg",
       config: {
         name: "Not Enough Accountability",
-        icon: "./src/assets/icon.icns",
+        icon: "./src/assets/electron.icns",
         background: "./src/assets/dmg-background.png",
         format: "ULFO",
       },
@@ -46,8 +46,7 @@ module.exports = {
       config: {
         options: {
           maintainer: "The Accountability App Team",
-          homepage:
-            "https://github.com/your-username/not-enough-accountability",
+          homepage: "https://github.com/chaosweasl/not-enough-accountability",
           description:
             "Desktop accountability system for monitoring computer usage",
           categories: ["Utility", "Productivity"],
@@ -60,8 +59,7 @@ module.exports = {
       config: {
         options: {
           maintainer: "The Accountability App Team",
-          homepage:
-            "https://github.com/your-username/not-enough-accountability",
+          homepage: "https://github.com/chaosweasl/not-enough-accountability",
           description:
             "Desktop accountability system for monitoring computer usage",
           categories: ["Utility", "Productivity"],
@@ -75,7 +73,7 @@ module.exports = {
       name: "@electron-forge/publisher-github",
       config: {
         repository: {
-          owner: "your-username",
+          owner: "chaosweasl",
           name: "not-enough-accountability",
         },
         prerelease: false,

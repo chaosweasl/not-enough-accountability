@@ -49,7 +49,7 @@ A desktop accountability system that monitors your computer usage during work ho
 
 ### Quick Download
 
-Get the latest version from our [Releases page](https://github.com/your-username/not-enough-accountability/releases):
+Get the latest version from our [Releases page](https://github.com/chaosweasl/not-enough-accountability/releases):
 
 - **Windows**: Download `Not-Enough-Accountability-Setup.exe`
 - **macOS**: Download `Not-Enough-Accountability.dmg`
@@ -175,7 +175,7 @@ Interested in contributing to the project? Check out our [CONTRIBUTING.md](CONTR
 
 If you encounter issues:
 
-1. Check the [Issues](https://github.com/your-username/not-enough-accountability/issues) page
+1. Check the [Issues](https://github.com/chaosweasl/not-enough-accountability/issues) page
 2. Enable developer tools in the app for debugging
 3. Check the activity log for error messages
 4. Create a new issue with detailed information

@@ -27,7 +27,7 @@ let lastWarningTime = new Map(); // Track when each app was last warned about
 autoUpdater.checkForUpdatesAndNotify();
 autoUpdater.setFeedURL({
   provider: "github",
-  owner: "your-username", // Replace with your GitHub username
+  owner: "chaosweasl",
   repo: "not-enough-accountability",
 });
 
