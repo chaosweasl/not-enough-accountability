@@ -11,6 +11,7 @@ Thank you for your interest in contributing to the Not Enough Accountability pro
 - [Coding Standards](#coding-standards)
 - [Issue Guidelines](#issue-guidelines)
 - [Feature Requests](#feature-requests)
+- [Code of Conduct](#code-of-conduct)
 
 ## 🚀 Getting Started
 
@@ -307,6 +308,17 @@ Any alternative solutions you've considered?
 
 Screenshots, mockups, or examples that help explain the feature.
 ```
+
+## 🤝 Code of Conduct
+
+This project is for everyone. Please be kind, respectful, and constructive in all discussions, issues, and pull requests.
+
+- Treat all contributors and users with respect and empathy.
+- No harassment, discrimination, or personal attacks will be tolerated.
+- Remember: This app is about accountability and helping each other improve.
+- Disagreements are okay, but keep conversations civil and focused on solutions.
+
+Let's make this a welcoming and supportive community for all!
 
 ## 🔧 Development Tips
 
