@@ -886,16 +886,13 @@ ipcMain.handle('get-activity-log', () => {
 
 ipcMain.handle('export-log', async (event, logData?: HistoryEntry[]) => {
   try {
-    const result: Electron.SaveDialogReturnValue = await dialog.showSaveDialog(
-      mainWindow!,
-      {
-        defaultPath: `accountability-log-${new Date().toISOString().split('T')[0]}.json`,
-        filters: [
-          { name: 'JSON Files', extensions: ['json'] },
-          { name: 'All Files', extensions: ['*'] },
-        ],
-      }
-    );
+    const result = (await dialog.showSaveDialog(mainWindow!, {
+      defaultPath: `accountability-log-${new Date().toISOString().split('T')[0]}.json`,
+      filters: [
+        { name: 'JSON Files', extensions: ['json'] },
+        { name: 'All Files', extensions: ['*'] },
+      ],
+    }) as unknown) as { canceled: boolean; filePath?: string };
 
     if (!result.canceled && result.filePath) {
       fs.writeFileSync(
