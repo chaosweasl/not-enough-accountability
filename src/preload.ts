@@ -1,16 +1,45 @@
 import { contextBridge, ipcRenderer, IpcRendererEvent } from "electron";
 
+// Simple types for preload.ts to avoid cross-dependencies
+interface AppSettings {
+  discordWebhook: string;
+  checkInTime: string;
+  checkOutTime: string;
+  restrictedApps: string[];
+  monitoringKeywords: string[];
+  theme?: 'light' | 'dark' | 'auto';
+  autoStart?: boolean;
+  minimizeToTray?: boolean;
+}
+
+interface ViolationEvent {
+  id: string;
+  timestamp: Date;
+  type: 'app' | 'keyword';
+  trigger: string;
+  windowTitle: string;
+  action: 'warned' | 'logged';
+  severity?: 'low' | 'medium' | 'high';
+}
+
+interface RawViolationData {
+  timestamp: Date | string;
+  windowTitle?: string;
+  apps?: string[];
+  allViolations?: string[];
+}
+
 // Helper to add event listeners safely (removes previous to avoid duplicates)
-const safeOn = (channel: string, callback: (...args: any[]) => void) => {
+const safeOn = (channel: string, callback: (...args: unknown[]) => void) => {
   ipcRenderer.removeAllListeners(channel);
-  ipcRenderer.on(channel, (event: IpcRendererEvent, ...args: any[]) => callback(...args));
+  ipcRenderer.on(channel, (event: IpcRendererEvent, ...args: unknown[]) => callback(...args));
 };
 
 // Expose API to renderer
 contextBridge.exposeInMainWorld("electronAPI", {
   // Settings management
   getSettings: () => ipcRenderer.invoke("get-settings"),
-  saveSettings: (settings: any) => ipcRenderer.invoke("save-settings", settings),
+  saveSettings: (settings: Partial<AppSettings>) => ipcRenderer.invoke("save-settings", settings),
 
   setCheckedIn: (checked: boolean) => ipcRenderer.invoke("set-checked-in", checked),
 
@@ -40,22 +69,24 @@ contextBridge.exposeInMainWorld("electronAPI", {
       if (res && typeof res === "object") return res;
       // otherwise normalize
       return { ok: !!res };
-    } catch (err: any) {
+    } catch (err: unknown) {
       return {
         ok: false,
-        error: err && err.message ? err.message : String(err),
+        error: err && typeof err === "object" && "message" in err 
+          ? (err as Error).message 
+          : String(err),
       };
     }
   },
 
   // File operations (may be unimplemented in main; safe to call)
-  exportLog: (logData?: any[]) => ipcRenderer.invoke("export-log", logData),
+  exportLog: (logData?: ViolationEvent[]) => ipcRenderer.invoke("export-log", logData),
   importSettings: () => ipcRenderer.invoke("import-settings"),
-  exportSettings: (settings: any) => ipcRenderer.invoke("export-settings", settings),
+  exportSettings: (settings: Partial<AppSettings>) => ipcRenderer.invoke("export-settings", settings),
 
   // System integration
   minimizeToTray: () => ipcRenderer.invoke("minimize-to-tray"),
-  showNotification: (title: string, body: string, options: any = {}) =>
+  showNotification: (title: string, body: string, options: Record<string, unknown> = {}) =>
     ipcRenderer.invoke("show-notification", title, body, options),
   setAutoStart: (enable: boolean) => ipcRenderer.invoke("set-auto-start", enable),
   getAutoStartStatus: () => ipcRenderer.invoke("get-auto-start-status"),
@@ -86,29 +117,41 @@ contextBridge.exposeInMainWorld("electronAPI", {
   installUpdate: () => ipcRenderer.invoke("install-update"),
 
   // Event listeners for main process events (use safe callbacks)
-  onViolationDetected: (callback: (data: any) => void) => safeOn("violation-detected", callback),
+  onViolationDetected: (callback: (data: RawViolationData) => void) => 
+    safeOn("violation-detected", (data) => callback(data as RawViolationData)),
   onTriggerCheckin: (callback: () => void) => safeOn("trigger-checkin", callback),
   onTriggerCheckout: (callback: () => void) => safeOn("trigger-checkout", callback),
-  onSettingsChanged: (callback: (data: any) => void) => safeOn("settings-changed", callback),
-  onMonitoringStatusChanged: (callback: (data: any) => void) =>
-    safeOn("monitoring-status-changed", callback),
+  onSettingsChanged: (callback: (data: Partial<AppSettings>) => void) => 
+    safeOn("settings-changed", (data) => callback(data as Partial<AppSettings>)),
+  onMonitoringStatusChanged: (callback: (data: { isActive: boolean }) => void) =>
+    safeOn("monitoring-status-changed", (data) => callback(data as { isActive: boolean })),
   onCheckedInStatusChanged: (callback: (isCheckedIn: boolean) => void) =>
-    safeOn("checked-in-status-changed", callback),
-  onScheduledEvent: (callback: (data: any) => void) => safeOn("scheduled-event", callback),
-  onSystemNotification: (callback: (data: any) => void) => safeOn("system-notification", callback),
-  onAppUpdate: (callback: (data: any) => void) => safeOn("app-update", callback),
+    safeOn("checked-in-status-changed", (isCheckedIn) => callback(isCheckedIn as boolean)),
+  onScheduledEvent: (callback: (data: Record<string, unknown>) => void) => 
+    safeOn("scheduled-event", (data) => callback(data as Record<string, unknown>)),
+  onSystemNotification: (callback: (data: { title: string; body: string }) => void) => 
+    safeOn("system-notification", (data) => callback(data as { title: string; body: string })),
+  onAppUpdate: (callback: (data: Record<string, unknown>) => void) => 
+    safeOn("app-update", (data) => callback(data as Record<string, unknown>)),
   onRequestQuitReason: (callback: () => void) => safeOn("request-quit-reason", callback),
 
   // Auto-updater events
-  onUpdateAvailable: (callback: (info: any) => void) => safeOn("update-available", callback),
-  onDownloadProgress: (callback: (progress: any) => void) => safeOn("download-progress", callback),
-  onUpdateDownloaded: (callback: (info: any) => void) => safeOn("update-downloaded", callback),
+  onUpdateAvailable: (callback: (info: Record<string, unknown>) => void) => 
+    safeOn("update-available", (info) => callback(info as Record<string, unknown>)),
+  onDownloadProgress: (callback: (progress: { percent: number }) => void) => 
+    safeOn("download-progress", (progress) => callback(progress as { percent: number })),
+  onUpdateDownloaded: (callback: (info: Record<string, unknown>) => void) => 
+    safeOn("update-downloaded", (info) => callback(info as Record<string, unknown>)),
 
   // Monitoring-specific events (sent by main in the updated index.js)
-  onMonitoringStarted: (callback: (data: any) => void) => safeOn("monitoring-started", callback),
-  onMonitoringStopped: (callback: (data: any) => void) => safeOn("monitoring-stopped", callback),
-  onLateCheckin: (callback: (data: any) => void) => safeOn("late-checkin", callback),
-  onTrayNotification: (callback: (data: any) => void) => safeOn("tray-notification", callback),
+  onMonitoringStarted: (callback: (data: Record<string, unknown>) => void) => 
+    safeOn("monitoring-started", (data) => callback(data as Record<string, unknown>)),
+  onMonitoringStopped: (callback: (data: Record<string, unknown>) => void) => 
+    safeOn("monitoring-stopped", (data) => callback(data as Record<string, unknown>)),
+  onLateCheckin: (callback: (data: RawViolationData) => void) => 
+    safeOn("late-checkin", (data) => callback(data as RawViolationData)),
+  onTrayNotification: (callback: (data: { title: string; body: string }) => void) => 
+    safeOn("tray-notification", (data) => callback(data as { title: string; body: string })),
 
   // Process-specific monitoring (may be unimplemented in main)
   isProcessRunning: (processName: string) =>
@@ -125,7 +168,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
     ipcRenderer.invoke("stop-window-title-monitoring"),
 
   // Screenshot functionality
-  takeScreenshot: (options: any = {}) =>
+  takeScreenshot: (options: Record<string, unknown> = {}) =>
     ipcRenderer.invoke("take-screenshot", options),
 
   // Network / activity monitoring (may be unimplemented)
@@ -143,9 +186,9 @@ contextBridge.exposeInMainWorld("electronAPI", {
   getBlockedSites: () => ipcRenderer.invoke("get-blocked-sites"),
 
   // Statistics and reporting
-  getUsageStats: (dateRange?: any) =>
+  getUsageStats: (dateRange?: { start: Date; end: Date }) =>
     ipcRenderer.invoke("get-usage-stats", dateRange),
-  generateReport: (options?: any) => ipcRenderer.invoke("generate-report", options),
+  generateReport: (options?: Record<string, unknown>) => ipcRenderer.invoke("generate-report", options),
 
   // Backup and restore
   createBackup: () => ipcRenderer.invoke("create-backup"),
@@ -157,8 +200,8 @@ contextBridge.exposeInMainWorld("electronAPI", {
   getTheme: () => ipcRenderer.invoke("get-theme"),
 
   // Logging
-  logActivity: (activity: any) => ipcRenderer.invoke("log-activity", activity),
-  getActivityLog: (options: any = {}) =>
+  logActivity: (activity: ViolationEvent) => ipcRenderer.invoke("log-activity", activity),
+  getActivityLog: (options: Record<string, unknown> = {}) =>
     ipcRenderer.invoke("get-activity-log", options),
   clearActivityLog: () => ipcRenderer.invoke("clear-activity-log"),
 
@@ -173,7 +216,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
     ipcRenderer.invoke("enable-emergency-access", duration),
   getSystemInfo: () => ipcRenderer.invoke("get-system-info"),
   getAppPerformance: () => ipcRenderer.invoke("get-app-performance"),
-  addCustomRule: (rule: any) => ipcRenderer.invoke("add-custom-rule", rule),
+  addCustomRule: (rule: Record<string, unknown>) => ipcRenderer.invoke("add-custom-rule", rule),
   removeCustomRule: (ruleId: string) =>
     ipcRenderer.invoke("remove-custom-rule", ruleId),
   getCustomRules: () => ipcRenderer.invoke("get-custom-rules"),
@@ -280,12 +323,12 @@ contextBridge.exposeInMainWorld("api", {
     }
   },
 
-  testDiscordNotification: async (): Promise<any> => {
+  testDiscordNotification: async (): Promise<{ ok: boolean; error?: string; status?: number; body?: string }> => {
     try {
       const settings = await ipcRenderer.invoke("get-settings");
       if (!settings.discordWebhook) {
         alert("Please set your Discord webhook URL first!");
-        return false;
+        return { ok: false, error: "No Discord webhook URL configured" };
       }
       const result = await ipcRenderer.invoke(
         "test-discord-webhook",
@@ -294,7 +337,7 @@ contextBridge.exposeInMainWorld("api", {
       return result;
     } catch (error) {
       console.error("Discord test failed:", error);
-      return false;
+      return { ok: false, error: error instanceof Error ? error.message : String(error) };
     }
   },
 
@@ -335,7 +378,7 @@ contextBridge.exposeInMainWorld("api", {
       try {
         const userReason = window.prompt("Reason for pausing monitoring:");
         if (userReason) reason = userReason;
-      } catch (e) {
+      } catch {
         console.warn("prompt() not available, using default reason");
       }
 
@@ -363,7 +406,7 @@ contextBridge.exposeInMainWorld("api", {
       let reason = "User requested stop";
       try {
         reason = window.prompt("Reason for stopping monitoring:") || reason;
-      } catch (e) {
+      } catch {
         console.warn("prompt() not available, using default reason");
       }
       await ipcRenderer.invoke("stop-monitoring-with-reason", reason);
@@ -379,7 +422,7 @@ contextBridge.exposeInMainWorld("api", {
       let reason = "User requested temporary disable";
       try {
         reason = window.prompt("Reason for temporary disable:") || reason;
-      } catch (e) {
+      } catch {
         console.warn("prompt() not available, using default reason");
       }
       await ipcRenderer.invoke("stop-monitoring-with-reason", reason);
@@ -485,9 +528,9 @@ contextBridge.exposeInMainWorld("utils", {
 // Dev debug helpers
 if (process.env.NODE_ENV === "development") {
   contextBridge.exposeInMainWorld("debug", {
-    log: (...args: any[]) => console.log("[Renderer]", ...args),
-    warn: (...args: any[]) => console.warn("[Renderer]", ...args),
-    error: (...args: any[]) => console.error("[Renderer]", ...args),
+    log: (...args: unknown[]) => console.log("[Renderer]", ...args),
+    warn: (...args: unknown[]) => console.warn("[Renderer]", ...args),
+    error: (...args: unknown[]) => console.error("[Renderer]", ...args),
   });
 }
 

@@ -1,3 +1,5 @@
+import React from 'react';
+
 // Core application types
 export interface MonitoringSettings {
   isActive: boolean;
@@ -28,6 +30,13 @@ export interface ViolationEvent {
   windowTitle: string;
   action: 'warned' | 'logged';
   severity?: 'low' | 'medium' | 'high';
+}
+
+export interface RawViolationData {
+  timestamp: Date | string;
+  windowTitle?: string;
+  apps?: string[];
+  allViolations?: string[];
 }
 
 export interface ActivityStats {

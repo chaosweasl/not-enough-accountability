@@ -16,7 +16,7 @@ const MonitoringControls: React.FC = () => {
     try {
       await startMonitoring();
       toast.success('Monitoring started!');
-    } catch (error) {
+    } catch {
       toast.error('Failed to start monitoring');
     }
   };
@@ -26,7 +26,7 @@ const MonitoringControls: React.FC = () => {
     try {
       await stopMonitoring(reason);
       toast.success('Monitoring stopped');
-    } catch (error) {
+    } catch {
       toast.error('Failed to stop monitoring');
     }
   };
@@ -39,7 +39,7 @@ const MonitoringControls: React.FC = () => {
     try {
       await pauseMonitoring(reason, minutes);
       toast.success(`Monitoring paused for ${minutes} minutes`);
-    } catch (error) {
+    } catch {
       toast.error('Failed to pause monitoring');
     }
   };

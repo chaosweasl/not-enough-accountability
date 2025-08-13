@@ -14,7 +14,7 @@ const Settings: React.FC = () => {
     try {
       await saveSettings(localSettings);
       toast.success('Settings saved successfully!');
-    } catch (error) {
+    } catch {
       toast.error('Failed to save settings');
     }
   };
@@ -25,7 +25,7 @@ const Settings: React.FC = () => {
       if (success) {
         toast.success('Discord notification test successful!');
       }
-    } catch (error) {
+    } catch {
       // Error already handled in the store
     }
   };

@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
-import { AppState, AppSettings, ViolationEvent, SessionInfo, ActivityStats, DetectedApp } from '../types';
+import { AppState, AppSettings, ViolationEvent, RawViolationData, SessionInfo, ActivityStats, DetectedApp } from '../types';
 
 interface AppStore extends AppState {
   // Actions
@@ -449,11 +449,11 @@ if (typeof window !== 'undefined' && window.electronAPI) {
     });
   });
 
-  window.electronAPI.onViolationDetected?.((data: any) => {
+  window.electronAPI.onViolationDetected?.((data: RawViolationData) => {
     const violation: ViolationEvent = {
       id: crypto.randomUUID(),
       timestamp: new Date(data.timestamp),
-      type: data.apps?.length > 0 ? 'app' : 'keyword',
+      type: data.apps?.length ? 'app' : 'keyword',
       trigger: data.allViolations?.[0] || 'Unknown',
       windowTitle: data.windowTitle || '',
       action: 'warned',
