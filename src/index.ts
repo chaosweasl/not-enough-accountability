@@ -12,6 +12,76 @@ import * as fs from 'node:fs';
 import { exec } from 'child_process';
 import { autoUpdater } from 'electron-updater';
 
+// ------------------- Configure cache directories before app starts -------------------
+// Fix cache creation issues by ensuring proper cache directory setup
+const setupCacheDirectories = (): void => {
+  try {
+    const userDataPath = app.getPath('userData');
+    const cacheDir = path.join(userDataPath, 'Cache');
+    const gpuCacheDir = path.join(userDataPath, 'GPUCache');
+    
+    // Ensure cache directories exist with proper permissions
+    const directories = [userDataPath, cacheDir, gpuCacheDir];
+    
+    directories.forEach(dir => {
+      if (!fs.existsSync(dir)) {
+        try {
+          fs.mkdirSync(dir, { recursive: true, mode: 0o755 });
+          console.log(`Created cache directory: ${dir}`);
+        } catch (error) {
+          console.warn(`Could not create cache directory ${dir}:`, error);
+        }
+      } else {
+        // Directory exists, ensure it's writable
+        try {
+          fs.accessSync(dir, fs.constants.W_OK);
+          console.log(`Cache directory ${dir} is writable`);
+        } catch (error) {
+          console.warn(`Cache directory ${dir} is not writable:`, error);
+          // Try to fix permissions on Windows
+          if (process.platform === 'win32') {
+            try {
+              fs.chmodSync(dir, 0o755);
+              console.log(`Fixed permissions for ${dir}`);
+            } catch (permError) {
+              console.warn(`Could not fix permissions for ${dir}:`, permError);
+            }
+          }
+        }
+      }
+    });
+    
+    // Set app cache path to our managed directory
+    app.setPath('cache', cacheDir);
+    
+    console.log('Cache directories configured successfully');
+  } catch (error) {
+    console.warn('Error setting up cache directories:', error);
+    // Continue startup even if cache setup fails
+  }
+};
+
+// Configure app before it's ready - these switches help prevent cache issues
+app.commandLine.appendSwitch('--disable-gpu-sandbox');
+app.commandLine.appendSwitch('--no-sandbox');
+app.commandLine.appendSwitch('--disable-web-security');
+app.commandLine.appendSwitch('--disable-setuid-sandbox');
+// Additional switches to help with cache issues on Windows
+if (process.platform === 'win32') {
+  app.commandLine.appendSwitch('--disable-dev-shm-usage');
+  app.commandLine.appendSwitch('--disable-features', 'VizDisplayCompositor');
+}
+// Linux-specific sandbox fixes
+if (process.platform === 'linux') {
+  app.commandLine.appendSwitch('--disable-sandbox');
+  app.commandLine.appendSwitch('--no-zygote');
+}
+
+// Setup cache directories early in the startup process
+if (!app.isReady()) {
+  setupCacheDirectories();
+}
+
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require('electron-squirrel-startup')) {
   app.quit();
@@ -134,6 +204,8 @@ const createWindow = (): void => {
       preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: false,
       contextIsolation: true,
+      webSecurity: false, // Helps with some cache-related issues
+      allowRunningInsecureContent: true, // Additional security bypass for cache issues
     },
     show: false,
   });
@@ -910,6 +982,9 @@ ipcMain.handle('export-log', async (event, logData?: HistoryEntry[]) => {
 
 // ------------------- App lifecycle -------------------
 app.whenReady().then(() => {
+  // Ensure cache directories are properly set up when app is ready
+  setupCacheDirectories();
+  
   loadSettings();
   createWindow();
   createTray();
