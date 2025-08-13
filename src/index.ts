@@ -1,4 +1,4 @@
-const {
+import {
   app,
   BrowserWindow,
   ipcMain,
@@ -6,26 +6,36 @@ const {
   Menu,
   nativeImage,
   dialog,
-} = require("electron");
-const path = require("node:path");
-const fs = require("node:fs");
-const { exec } = require("child_process");
-const { autoUpdater } = require("electron-updater");
+} from "electron";
+import * as path from "node:path";
+import * as fs from "node:fs";
+import { exec } from "child_process";
+import { autoUpdater } from "electron-updater";
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require("electron-squirrel-startup")) {
   app.quit();
 }
 
-let mainWindow;
-let tray;
+let mainWindow: BrowserWindow | null = null;
+let tray: Tray | null = null;
 let isMonitoring = false;
-let monitoringInterval;
-let lastWarningTime = new Map();
+let monitoringInterval: NodeJS.Timeout | null = null;
+// eslint-disable-next-line prefer-const
+let lastWarningTime = new Map<string, number>();
 let isCheckedIn = false; // Track check-in state in main process
 
+// App settings interface
+interface AppSettings {
+  discordWebhook: string;
+  checkInTime: string;
+  checkOutTime: string;
+  restrictedApps: string[];
+  monitoringKeywords: string[];
+}
+
 // App settings
-let settings = {
+let settings: AppSettings = {
   discordWebhook: "",
   checkInTime: "08:00",
   checkOutTime: "16:00",
@@ -34,7 +44,7 @@ let settings = {
 };
 
 // Helper function for time conversion
-function timeToMinutes(timeStr) {
+function timeToMinutes(timeStr: string): number {
   const [hours = 0, minutes = 0] = (timeStr || "0:0").split(":").map(Number);
   return hours * 60 + minutes;
 }
@@ -84,7 +94,13 @@ autoUpdater.on("update-downloaded", (info) => {
 // ------------------- Helpers for persistence -------------------
 const historyPath = path.join(app.getPath("userData"), "activity-history.json");
 
-function readHistory() {
+interface HistoryEntry {
+  type: string;
+  reason?: string;
+  time: string;
+}
+
+function readHistory(): HistoryEntry[] {
   try {
     if (!fs.existsSync(historyPath)) return [];
     const raw = fs.readFileSync(historyPath, "utf8");
@@ -95,7 +111,7 @@ function readHistory() {
   }
 }
 
-function appendHistory(entry) {
+function appendHistory(entry: HistoryEntry): void {
   try {
     const arr = readHistory();
     arr.unshift(entry);
@@ -108,7 +124,7 @@ function appendHistory(entry) {
 }
 
 // ------------------- Create windows & tray -------------------
-const createWindow = () => {
+const createWindow = (): void => {
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 900,
@@ -129,13 +145,13 @@ const createWindow = () => {
   }
 
   mainWindow.once("ready-to-show", () => {
-    mainWindow.show();
+    mainWindow?.show();
   });
 
   mainWindow.on("close", (event) => {
-    if (!app.isQuiting) {
+    if (!(app as any).isQuiting) {
       event.preventDefault();
-      mainWindow.hide();
+      mainWindow?.hide();
       showTrayNotification(
         "App minimized to tray",
         "The accountability app is still running in the background."
@@ -149,12 +165,12 @@ const createWindow = () => {
   }
 };
 
-const createTray = () => {
+const createTray = (): void => {
   try {
     // Use assets/electron.png as requested
     const iconPath = path.join(__dirname, "assets", "electron.png");
 
-    let trayIcon;
+    let trayIcon: Electron.NativeImage;
     if (fs.existsSync(iconPath)) {
       trayIcon = nativeImage.createFromPath(iconPath);
     } else {
@@ -174,12 +190,12 @@ const createTray = () => {
         mainWindow.focus();
       }
     });
-  } catch (error) {
+  } catch (error: any) {
     console.log("Could not create tray icon:", error && error.message);
   }
 };
 
-function updateTrayMenu() {
+function updateTrayMenu(): void {
   if (!tray) return;
 
   const contextMenu = Menu.buildFromTemplate([
@@ -243,16 +259,16 @@ function updateTrayMenu() {
 
           // Fallback: if renderer doesn't quit the app within 5s, force quit from main.
           setTimeout(() => {
-            if (!app.isQuiting) {
+            if (!(app as any).isQuiting) {
               console.log(
                 "Quit fallback: forcing app quit because renderer didn't respond."
               );
-              app.isQuiting = true;
+              (app as any).isQuiting = true;
               app.quit();
             }
           }, 5000);
         } else {
-          app.isQuiting = true;
+          (app as any).isQuiting = true;
           app.quit();
         }
       },
@@ -265,7 +281,7 @@ function updateTrayMenu() {
 // ------------------- Settings load/save -------------------
 const settingsPath = path.join(app.getPath("userData"), "settings.json");
 
-const loadSettings = () => {
+const loadSettings = (): void => {
   try {
     if (fs.existsSync(settingsPath)) {
       const data = fs.readFileSync(settingsPath, "utf8");
@@ -277,7 +293,7 @@ const loadSettings = () => {
   }
 };
 
-const saveSettings = () => {
+const saveSettings = (): void => {
   try {
     fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
     console.log("Settings saved:", settings);
@@ -287,9 +303,9 @@ const saveSettings = () => {
 };
 
 // ------------------- Process monitoring functions -------------------
-const getRunningProcesses = () => {
+const getRunningProcesses = (): Promise<string[]> => {
   return new Promise((resolve, reject) => {
-    let command;
+    let command: string;
 
     if (process.platform === "win32") {
       command = "tasklist /fo csv /nh";
@@ -306,7 +322,7 @@ const getRunningProcesses = () => {
         return;
       }
 
-      let processes = [];
+      let processes: string[] = [];
       if (process.platform === "win32") {
         const lines = stdout.split("\n").filter((line) => line.trim());
         processes = lines
@@ -333,10 +349,10 @@ const getRunningProcesses = () => {
   });
 };
 
-const checkForRestrictedApps = async () => {
+const checkForRestrictedApps = async (): Promise<string[]> => {
   try {
     const runningProcesses = await getRunningProcesses();
-    const restrictedFound = [];
+    const restrictedFound: string[] = [];
 
     settings.restrictedApps.forEach((appNameRaw) => {
       const appName = appNameRaw.toLowerCase();
@@ -359,10 +375,10 @@ const checkForRestrictedApps = async () => {
   }
 };
 
-const checkForRestrictedKeywords = async () => {
+const checkForRestrictedKeywords = async (): Promise<string[]> => {
   try {
     return new Promise((resolve) => {
-      let command;
+      let command: string;
 
       if (process.platform === "win32") {
         command =
@@ -381,7 +397,7 @@ const checkForRestrictedKeywords = async () => {
           return;
         }
 
-        const keywordsFound = [];
+        const keywordsFound: string[] = [];
         try {
           if (process.platform === "win32") {
             if (!stdout.trim()) {
@@ -394,7 +410,7 @@ const checkForRestrictedKeywords = async () => {
               ? processes
               : [processes];
 
-            processArray.forEach((proc) => {
+            processArray.forEach((proc: any) => {
               if (proc.MainWindowTitle) {
                 const title = proc.MainWindowTitle.toLowerCase();
                 settings.monitoringKeywords.forEach((keyword) => {
@@ -430,33 +446,8 @@ const checkForRestrictedKeywords = async () => {
 };
 
 // ------------------- Discord / fetch helper -------------------
-async function fetchWrapper(url, opts) {
-  // prefer global fetch (Node 18+), otherwise require node-fetch safely
-  if (typeof global.fetch === "function") {
-    return global.fetch(url, opts);
-  }
 
-  try {
-    // require may throw if node-fetch is missing or ESM-only; handle default export shape
-    const nf = require("node-fetch");
-    const f = nf.default || nf;
-    if (typeof f !== "function") {
-      throw new Error(
-        "node-fetch did not export a function (nf/default mismatch)."
-      );
-    }
-    return f(url, opts);
-  } catch (err) {
-    console.error(
-      "fetchWrapper: no fetch available and require('node-fetch') failed:",
-      err
-    );
-    // rethrow for upper layer to handle/log
-    throw err;
-  }
-}
-
-const sendDiscordNotification = async (message) => {
+const sendDiscordNotification = async (message: string): Promise<boolean> => {
   if (!settings.discordWebhook) {
     console.log("Discord webhook not configured");
     return false;
@@ -486,7 +477,7 @@ const sendDiscordNotification = async (message) => {
   }
 };
 
-const showTrayNotification = (title, body) => {
+const showTrayNotification = (title: string, body: string): void => {
   if (tray) {
     try {
       // displayBalloon works on Windows; on mac/linux it may be ignored.
@@ -511,7 +502,7 @@ const showTrayNotification = (title, body) => {
 // ------------------- Monitoring lifecycle -------------------
 let isStartingMonitoring = false;
 
-const startProcessMonitoring = () => {
+const startProcessMonitoring = (): void => {
   if (isMonitoring || isStartingMonitoring) return;
 
   isStartingMonitoring = true;
@@ -554,7 +545,7 @@ const startProcessMonitoring = () => {
 
       if (allViolations.length > 0) {
         const now = Date.now();
-        const violationsToWarnAbout = [];
+        const violationsToWarnAbout: string[] = [];
 
         allViolations.forEach((violation) => {
           const lastWarned = lastWarningTime.get(violation) || 0;
@@ -617,7 +608,7 @@ const startProcessMonitoring = () => {
   updateTrayMenu();
 };
 
-const stopProcessMonitoring = () => {
+const stopProcessMonitoring = (): void => {
   if (!isMonitoring) return;
 
   isMonitoring = false;
@@ -639,7 +630,7 @@ const stopProcessMonitoring = () => {
 // ------------------- IPC Handlers -------------------
 ipcMain.handle("get-settings", () => settings);
 
-ipcMain.handle("save-settings", (event, newSettings) => {
+ipcMain.handle("save-settings", (event, newSettings: Partial<AppSettings>) => {
   settings = { ...settings, ...newSettings };
   saveSettings();
   return true;
@@ -658,17 +649,17 @@ ipcMain.handle("stop-monitoring", async () => {
   return !isMonitoring;
 });
 
-ipcMain.handle("stop-monitoring-with-reason", async (event, reason) => {
+ipcMain.handle("stop-monitoring-with-reason", async (event, reason: string) => {
   await sendDiscordNotification(
     `⏹️ **Monitoring Stopped**\nReason: ${reason}\nTime: ${new Date().toLocaleString()}`
   );
-  stopProcessMonitoring(reason);
+  stopProcessMonitoring();
   return !isMonitoring;
 });
 
 ipcMain.handle(
   "pause-monitoring-with-reason",
-  async (event, reason, minutes = 60) => {
+  async (event, reason: string, minutes: number = 60) => {
     await sendDiscordNotification(
       `⏸️ **Monitoring Paused**\nReason: ${reason}\nDuration: ${minutes} minutes\nTime: ${new Date().toLocaleString()}`
     );
@@ -696,7 +687,7 @@ ipcMain.handle(
   }
 );
 
-ipcMain.handle("quit-app-with-reason", async (event, reason) => {
+ipcMain.handle("quit-app-with-reason", async (event, reason: string) => {
   await sendDiscordNotification(
     `🚪 **App Quit**\nReason: ${reason}\nTime: ${new Date().toLocaleString()}`
   );
@@ -706,7 +697,7 @@ ipcMain.handle("quit-app-with-reason", async (event, reason) => {
     reason: reason,
     time: new Date().toISOString(),
   });
-  app.isQuiting = true;
+  (app as any).isQuiting = true;
   app.quit();
   return true;
 });
@@ -730,11 +721,11 @@ ipcMain.handle("get-monitoring-status", () => isMonitoring);
 
 ipcMain.handle("get-checked-in-status", () => isCheckedIn);
 
-ipcMain.handle("send-discord-message", async (event, message) => {
+ipcMain.handle("send-discord-message", async (event, message: string) => {
   return await sendDiscordNotification(message);
 });
 
-ipcMain.handle("test-discord-webhook", async (event, webhookUrl) => {
+ipcMain.handle("test-discord-webhook", async (event, webhookUrl: string) => {
   try {
     const fetch = require("node-fetch");
     const response = await fetch(webhookUrl, {
@@ -757,7 +748,7 @@ ipcMain.handle("test-discord-webhook", async (event, webhookUrl) => {
     }
 
     return { ok: response.ok, status: response.status, body };
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error testing Discord webhook:", error);
     return {
       ok: false,
@@ -767,7 +758,7 @@ ipcMain.handle("test-discord-webhook", async (event, webhookUrl) => {
 });
 
 // Track check-in/out state in main process
-ipcMain.handle("set-checked-in", async (event, checkedIn) => {
+ipcMain.handle("set-checked-in", async (event, checkedIn: boolean) => {
   // Normalize
   isCheckedIn = !!checkedIn;
   updateTrayMenu();
@@ -790,21 +781,21 @@ ipcMain.handle("set-checked-in", async (event, checkedIn) => {
     );
   }
 
-  const entry = {
+  const entry: HistoryEntry = {
     type: checkedIn ? "checkin" : "checkout",
     time: now.toISOString(),
   };
 
   // Persist history (best-effort)
   try {
-    await appendHistory(entry);
+    appendHistory(entry);
   } catch (e) {
     console.warn("appendHistory failed:", e);
   }
 
   // Ensure settings are current (in case renderer saved new checkInTime)
   try {
-    await loadSettings(); // loadSettings should update the `settings` object in main
+    loadSettings(); // loadSettings should update the `settings` object in main
   } catch (e) {
     console.warn("Failed to reload settings before check-in logic:", e);
   }
@@ -859,7 +850,7 @@ ipcMain.on("request-pause-monitoring", () => {
 });
 
 // Activity log handlers
-let activityLog = [];
+let activityLog: any[] = [];
 
 ipcMain.handle("clear-activity-log", () => {
   activityLog = [];
@@ -870,10 +861,9 @@ ipcMain.handle("get-activity-log", (event, options = {}) => {
   return activityLog;
 });
 
-ipcMain.handle("export-log", async (event, logData) => {
+ipcMain.handle("export-log", async (event, logData?: any[]) => {
   try {
-    const { dialog } = require("electron");
-    const result = await dialog.showSaveDialog(mainWindow, {
+    const result = await dialog.showSaveDialog(mainWindow!, {
       defaultPath: `accountability-log-${new Date().toISOString().split("T")[0]}.json`,
       filters: [
         { name: "JSON Files", extensions: ["json"] },
@@ -881,9 +871,9 @@ ipcMain.handle("export-log", async (event, logData) => {
       ],
     });
 
-    if (!result.canceled && result.filePath) {
+    if (!(result as any).canceled && (result as any).filePath) {
       fs.writeFileSync(
-        result.filePath,
+        (result as any).filePath,
         JSON.stringify(logData || activityLog, null, 2)
       );
       return true;
@@ -894,49 +884,6 @@ ipcMain.handle("export-log", async (event, logData) => {
     return false;
   }
 });
-
-// Provide a small modal fallback (if renderer doesn't respond to quit request)
-function openQuitReasonPrompt() {
-  // create a very small modal window to get reason
-  const prompt = new BrowserWindow({
-    parent: mainWindow,
-    modal: true,
-    width: 420,
-    height: 180,
-    resizable: false,
-    webPreferences: {
-      nodeIntegration: true, // quick fallback
-      contextIsolation: false,
-    },
-  });
-
-  const html = `
-    <!doctype html>
-    <html>
-      <body style="font-family: sans-serif; margin: 16px;">
-        <h3>Quit Accountability App</h3>
-        <div>Please provide a reason for quitting (optional):</div>
-        <textarea id="r" style="width:100%;height:60px;margin-top:8px"></textarea>
-        <div style="display:flex;gap:8px;margin-top:10px;justify-content:flex-end">
-          <button id="c">Cancel</button>
-          <button id="q">Quit</button>
-        </div>
-        <script>
-          const { ipcRenderer } = require('electron');
-          document.getElementById('q').addEventListener('click', () => {
-            const reason = document.getElementById('r').value || '';
-            ipcRenderer.invoke('quit-app-with-reason', reason).catch(()=>{});
-          });
-          document.getElementById('c').addEventListener('click', () => {
-            window.close();
-          });
-        </script>
-      </body>
-    </html>
-  `;
-
-  prompt.loadURL("data:text/html;charset=utf-8," + encodeURIComponent(html));
-}
 
 // ------------------- App lifecycle -------------------
 app.whenReady().then(() => {
