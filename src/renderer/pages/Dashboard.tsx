@@ -46,65 +46,57 @@ const Dashboard: React.FC = () => {
     <div className="space-y-6">
       {/* Status Overview */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                Status
-              </p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {session.isCheckedIn ? 'Checked In' : 'Not Checked In'}
-              </p>
+        <div className="stats shadow">
+          <div className="stat">
+            <div className="stat-title">Status</div>
+            <div className="stat-value text-lg">
+              {session.isCheckedIn ? 'Checked In' : 'Not Checked In'}
             </div>
-            <div
-              className={`w-3 h-3 rounded-full ${session.isCheckedIn ? 'bg-green-500' : 'bg-gray-300'}`}
-            />
+            <div className="stat-desc">
+              <div className={`badge ${session.isCheckedIn ? 'badge-success' : 'badge-ghost'}`}>
+                {session.isCheckedIn ? 'Active' : 'Inactive'}
+              </div>
+            </div>
           </div>
-        </Card>
+        </div>
 
-        <Card>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                Monitoring
-              </p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {session.isMonitoring ? 'Active' : 'Inactive'}
-              </p>
+        <div className="stats shadow">
+          <div className="stat">
+            <div className="stat-title">Monitoring</div>
+            <div className="stat-value text-lg">
+              {session.isMonitoring ? 'Active' : 'Inactive'}
             </div>
-            <div
-              className={`w-3 h-3 rounded-full ${session.isMonitoring ? 'bg-blue-500 animate-pulse' : 'bg-gray-300'}`}
-            />
+            <div className="stat-desc">
+              <div className={`badge ${session.isMonitoring ? 'badge-primary animate-pulse' : 'badge-ghost'}`}>
+                {session.isMonitoring ? 'Running' : 'Stopped'}
+              </div>
+            </div>
           </div>
-        </Card>
+        </div>
 
-        <Card>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                Today's Violations
-              </p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {session.todayViolations}
-              </p>
-            </div>
-            <div className="text-red-500">
-              <svg
-                className="h-6 w-6"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth="1.5"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"
-                />
-              </svg>
+        <div className="stats shadow">
+          <div className="stat">
+            <div className="stat-title">Today's Violations</div>
+            <div className="stat-value text-error">{session.todayViolations}</div>
+            <div className="stat-desc">
+              <div className="stat-figure text-error">
+                <svg
+                  className="h-6 w-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth="1.5"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"
+                  />
+                </svg>
+              </div>
             </div>
           </div>
-        </Card>
+        </div>
       </div>
 
       {/* Check-in/Out Controls */}
@@ -112,13 +104,13 @@ const Dashboard: React.FC = () => {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <p className="text-base-content opacity-70">
                 Work Hours: {settings.checkInTime} - {settings.checkOutTime}
               </p>
               {currentWorkHours && (
-                <p className="text-xs text-green-600 dark:text-green-400">
+                <div className="badge badge-success badge-sm mt-1">
                   Currently within work hours
-                </p>
+                </div>
               )}
             </div>
             <div className="flex space-x-2">
@@ -142,10 +134,9 @@ const Dashboard: React.FC = () => {
           </div>
 
           {session.isCheckedIn && session.checkInTime && (
-            <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
-              <p className="text-sm text-green-800 dark:text-green-200">
-                Checked in at {session.checkInTime.toLocaleTimeString()}
-              </p>
+            <div className="alert alert-success">
+              <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              <span>Checked in at {session.checkInTime.toLocaleTimeString()}</span>
             </div>
           )}
         </div>
@@ -159,38 +150,22 @@ const Dashboard: React.FC = () => {
         <Card title="📊 Today's Summary">
           <div className="space-y-3">
             <div className="flex justify-between">
-              <span className="text-sm text-gray-600 dark:text-gray-400">
-                Violations
-              </span>
-              <span className="text-sm font-medium">
-                {session.todayViolations}
-              </span>
+              <span className="text-base-content opacity-70">Violations</span>
+              <span className="font-medium">{session.todayViolations}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-sm text-gray-600 dark:text-gray-400">
-                Restricted Apps
-              </span>
-              <span className="text-sm font-medium">
-                {settings.restrictedApps.length}
-              </span>
+              <span className="text-base-content opacity-70">Restricted Apps</span>
+              <span className="font-medium">{settings.restrictedApps.length}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-sm text-gray-600 dark:text-gray-400">
-                Keywords
-              </span>
-              <span className="text-sm font-medium">
-                {settings.monitoringKeywords.length}
-              </span>
+              <span className="text-base-content opacity-70">Keywords</span>
+              <span className="font-medium">{settings.monitoringKeywords.length}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-sm text-gray-600 dark:text-gray-400">
-                Session Status
-              </span>
-              <span
-                className={`text-sm font-medium ${session.isCheckedIn ? 'text-green-600' : 'text-gray-500'}`}
-              >
+              <span className="text-base-content opacity-70">Session Status</span>
+              <div className={`badge ${session.isCheckedIn ? 'badge-success' : 'badge-ghost'}`}>
                 {session.status}
-              </span>
+              </div>
             </div>
           </div>
         </Card>
@@ -199,29 +174,24 @@ const Dashboard: React.FC = () => {
           {recentViolations.length > 0 ? (
             <div className="space-y-2">
               {recentViolations.map((violation) => (
-                <div
-                  key={violation.id}
-                  className="flex items-center justify-between p-2 bg-red-50 dark:bg-red-900/20 rounded"
-                >
-                  <div>
-                    <p className="text-sm font-medium text-red-800 dark:text-red-200">
-                      {violation.trigger}
-                    </p>
-                    <p className="text-xs text-red-600 dark:text-red-300">
-                      {violation.type} •{' '}
-                      {formatRelativeTime(violation.timestamp)}
+                <div key={violation.id} className="alert alert-error">
+                  <div className="flex-1">
+                    <p className="font-medium">{violation.trigger}</p>
+                    <p className="text-xs opacity-70">
+                      {violation.type} • {formatRelativeTime(violation.timestamp)}
                     </p>
                   </div>
-                  <span className="px-2 py-1 text-xs font-medium bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100 rounded">
+                  <div className="badge badge-error badge-outline">
                     {violation.action}
-                  </span>
+                  </div>
                 </div>
               ))}
             </div>
           ) : (
-            <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
-              No violations today 🎉
-            </p>
+            <div className="text-center py-8">
+              <div className="text-6xl mb-2">🎉</div>
+              <p className="text-base-content opacity-70">No violations today</p>
+            </div>
           )}
         </Card>
       </div>
