@@ -1,6 +1,4 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
 
 /* Dark mode support */
 @media (prefers-color-scheme: dark) {
@@ -62,7 +60,8 @@
 
 /* Custom pulse animation */
 @keyframes pulse-slow {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
   }
   50% {

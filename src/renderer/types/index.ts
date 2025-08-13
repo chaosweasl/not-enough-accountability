@@ -95,45 +95,56 @@ export interface ElectronAPI {
   // Settings management
   getSettings: () => Promise<AppSettings>;
   saveSettings: (settings: Partial<AppSettings>) => Promise<boolean>;
-  
+
   // Check-in/out
   setCheckedIn: (checked: boolean) => Promise<boolean>;
   getCheckedInStatus: () => Promise<boolean>;
-  
+
   // Monitoring
   startMonitoring: () => Promise<boolean>;
   stopMonitoring: () => Promise<boolean>;
   stopMonitoringWithReason: (reason: string) => Promise<boolean>;
-  pauseMonitoringWithReason: (reason: string, minutes?: number) => Promise<boolean>;
+  pauseMonitoringWithReason: (
+    reason: string,
+    minutes?: number
+  ) => Promise<boolean>;
   getMonitoringStatus: () => Promise<boolean>;
-  
+
   // Discord integration
   sendDiscordMessage: (message: string) => Promise<boolean>;
-  testDiscordWebhook: (webhook: string) => Promise<{ ok: boolean; error?: string; status?: number; body?: string }>;
-  
+  testDiscordWebhook: (
+    webhook: string
+  ) => Promise<{ ok: boolean; error?: string; status?: number; body?: string }>;
+
   // File operations
-  exportLog: (logData: any) => Promise<boolean>;
-  
+  exportLog: (logData: unknown) => Promise<boolean>;
+
   // System integration
   getAppVersion: () => Promise<string>;
   checkForUpdates: () => Promise<boolean>;
   quitAppWithReason: (reason: string) => Promise<boolean>;
-  
+
   // Activity log
-  getActivityLog: (options?: any) => Promise<ViolationEvent[]>;
+  getActivityLog: (
+    options?: Record<string, unknown>
+  ) => Promise<ViolationEvent[]>;
   clearActivityLog: () => Promise<boolean>;
-  
+
   // Event listeners
-  onViolationDetected: (callback: (data: any) => void) => void;
+  onViolationDetected: (callback: (data: ViolationEvent) => void) => void;
   onTriggerCheckin: (callback: () => void) => void;
   onTriggerCheckout: (callback: () => void) => void;
   onMonitoringStarted: (callback: () => void) => void;
   onMonitoringStopped: (callback: () => void) => void;
   onCheckedInStatusChanged: (callback: (checked: boolean) => void) => void;
   onRequestQuitReason: (callback: () => void) => void;
-  onUpdateAvailable: (callback: (info: any) => void) => void;
-  onUpdateDownloaded: (callback: (info: any) => void) => void;
-  onLateCheckin: (callback: (data: any) => void) => void;
+  onUpdateAvailable: (
+    callback: (info: Record<string, unknown>) => void
+  ) => void;
+  onUpdateDownloaded: (
+    callback: (info: Record<string, unknown>) => void
+  ) => void;
+  onLateCheckin: (callback: (data: ViolationEvent) => void) => void;
   removeAllListeners: (channel?: string) => void;
 }
 
@@ -144,7 +155,12 @@ export interface WindowAPI {
     checkOut: () => Promise<boolean>;
     addRestrictedApp: () => Promise<boolean>;
     addKeyword: () => Promise<boolean>;
-    testDiscordNotification: () => Promise<any>;
+    testDiscordNotification: () => Promise<{
+      ok: boolean;
+      error?: string;
+      status?: number;
+      body?: string;
+    }>;
     saveSettings: () => Promise<boolean>;
     pauseMonitoring: () => Promise<boolean>;
     resumeMonitoring: () => Promise<boolean>;
@@ -155,9 +171,9 @@ export interface WindowAPI {
     exportLog: () => Promise<boolean>;
     checkForUpdates: () => Promise<boolean>;
   };
-  
+
   electronAPI: ElectronAPI;
-  
+
   utils: {
     formatTime: (date: Date) => string;
     formatDate: (date: Date) => string;
@@ -167,9 +183,9 @@ export interface WindowAPI {
     minutesToTime: (minutes: number) => string;
     isValidUrl: (url: string) => boolean;
     escapeHtml: (unsafe: string) => string;
-    uniqueArray: (arr: any[]) => any[];
+    uniqueArray: <T>(arr: T[]) => T[];
   };
-  
+
   appInfo: {
     platform: string;
     arch: string;
