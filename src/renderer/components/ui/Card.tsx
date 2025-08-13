@@ -1,11 +1,16 @@
 import React from 'react';
-import { cn } from '../../utils';
-import { CardProps } from '../../types';
+
+interface CardProps {
+  children: React.ReactNode;
+  title?: string;
+  className?: string;
+  padding?: 'none' | 'sm' | 'md' | 'lg';
+}
 
 const Card: React.FC<CardProps> = ({
   children,
   title,
-  className,
+  className = '',
   padding = 'md',
   ...props
 }) => {
@@ -18,13 +23,10 @@ const Card: React.FC<CardProps> = ({
 
   return (
     <div
-      className={cn(
-        'card bg-base-100 shadow-lg border border-base-200',
-        className
-      )}
+      className={`card bg-base-100 shadow-lg border border-base-200 ${className}`}
       {...props}
     >
-      <div className={cn('card-body', paddingClasses[padding])}>
+      <div className={`card-body ${paddingClasses[padding]}`}>
         {title && (
           <h2 className="card-title text-base-content mb-2">
             {title}

@@ -1,6 +1,14 @@
 import React from 'react';
-import { cn } from '../../utils';
-import { ButtonProps } from '../../types';
+
+interface ButtonProps {
+  variant?: 'primary' | 'secondary' | 'success' | 'warning' | 'danger';
+  size?: 'sm' | 'md' | 'lg';
+  disabled?: boolean;
+  loading?: boolean;
+  children: React.ReactNode;
+  onClick?: () => void;
+  className?: string;
+}
 
 const Button: React.FC<ButtonProps> = ({
   variant = 'primary',
@@ -9,11 +17,9 @@ const Button: React.FC<ButtonProps> = ({
   loading = false,
   children,
   onClick,
-  className,
+  className = '',
   ...props
 }) => {
-  const baseClasses = 'btn';
-  
   const variants = {
     primary: 'btn-primary',
     secondary: 'btn-secondary',
@@ -36,17 +42,12 @@ const Button: React.FC<ButtonProps> = ({
 
   return (
     <button
-      className={cn(
-        baseClasses,
-        variants[variant],
-        sizes[size],
-        loading && 'loading',
-        className
-      )}
+      className={`btn ${variants[variant]} ${sizes[size]} ${className}`}
       disabled={disabled || loading}
       onClick={handleClick}
       {...props}
     >
+      {loading ? <span className="loading loading-spinner loading-sm"></span> : null}
       {children}
     </button>
   );

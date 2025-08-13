@@ -1,6 +1,13 @@
 import React from 'react';
-import { cn } from '../../utils';
-import { InputProps } from '../../types';
+
+interface InputProps {
+  type?: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  disabled?: boolean;
+  className?: string;
+}
 
 const Input: React.FC<InputProps> = ({
   type = 'text',
@@ -8,46 +15,19 @@ const Input: React.FC<InputProps> = ({
   onChange,
   placeholder,
   disabled = false,
-  error,
-  label,
-  required = false,
-  className,
+  className = '',
   ...props
 }) => {
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    onChange(e.target.value);
-  };
-
   return (
-    <div className="form-control w-full">
-      {label && (
-        <label className="label">
-          <span className="label-text">
-            {label}
-            {required && <span className="text-error ml-1">*</span>}
-          </span>
-        </label>
-      )}
-      <input
-        type={type}
-        value={value}
-        onChange={handleChange}
-        placeholder={placeholder}
-        disabled={disabled}
-        required={required}
-        className={cn(
-          'input input-bordered w-full',
-          error && 'input-error',
-          className
-        )}
-        {...props}
-      />
-      {error && (
-        <label className="label">
-          <span className="label-text-alt text-error">{error}</span>
-        </label>
-      )}
-    </div>
+    <input
+      type={type}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={placeholder}
+      disabled={disabled}
+      className={`input input-bordered w-full ${className}`}
+      {...props}
+    />
   );
 };
 

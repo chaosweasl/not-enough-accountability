@@ -1,47 +1,31 @@
 import React from 'react';
-import { cn } from '../../utils';
-import { ToggleProps } from '../../types';
+
+interface ToggleProps {
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+  label?: string;
+  disabled?: boolean;
+  className?: string;
+}
 
 const Toggle: React.FC<ToggleProps> = ({
   checked,
   onChange,
   label,
   disabled = false,
-  size = 'md',
+  className = '',
   ...props
 }) => {
-  const sizes = {
-    sm: 'toggle-sm',
-    md: '',
-    lg: 'toggle-lg',
-  };
-
-  const handleToggle = () => {
-    if (!disabled) {
-      onChange(!checked);
-    }
-  };
-
   return (
-    <div className="form-control">
+    <div className={`form-control ${className}`}>
       <label className="label cursor-pointer">
-        {label && (
-          <span className={cn(
-            "label-text",
-            disabled && 'opacity-50'
-          )}>
-            {label}
-          </span>
-        )}
+        {label && <span className="label-text">{label}</span>}
         <input
           type="checkbox"
           checked={checked}
-          onChange={handleToggle}
+          onChange={(e) => onChange(e.target.checked)}
           disabled={disabled}
-          className={cn(
-            'toggle toggle-primary',
-            sizes[size]
-          )}
+          className="toggle toggle-primary"
           {...props}
         />
       </label>
