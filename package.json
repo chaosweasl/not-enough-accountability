@@ -29,7 +29,7 @@
     "lint:fix": "npm run lint -- --fix",
     "type-check": "tsc --noEmit",
     "release": "npm run make && npm run publish",
-    "prototype": "npm run build && npm run start"
+    "runall": "npm install && npm run build && npm run start"
   },
   "keywords": [
     "accountability",
