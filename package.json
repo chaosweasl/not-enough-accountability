@@ -80,7 +80,6 @@
     "wait-on": "^8.0.4"
   },
   "dependencies": {
-    "@tailwindcss/vite": "^4.1.11",
     "clsx": "^2.1.1",
     "electron-squirrel-startup": "^1.0.1",
     "electron-updater": "^6.1.7",

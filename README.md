@@ -196,6 +196,77 @@ If you encounter issues:
 3. Check the activity log for error messages
 4. Create a new issue with detailed information
 
+## 🛠️ Development Setup
+
+### Prerequisites
+
+- **Node.js**: v18+ recommended (v16.14+ minimum for stable ESM support)
+- **npm**: v8+ (comes with Node.js)
+
+### Quick Start
+
+```bash
+# Clone the repository
+git clone https://github.com/chaosweasl/not-enough-accountability.git
+cd not-enough-accountability
+
+# Install dependencies
+npm install
+
+# Start development (runs both renderer and Electron)
+npm run dev
+```
+
+### Available Scripts
+
+- `npm run dev` - Start both Vite dev server and Electron app
+- `npm run dev:renderer` - Start only the Vite dev server (browser mode)
+- `npm run dev:electron` - Start only Electron (requires renderer running)
+- `npm run build` - Build production version
+- `npm run build:main` - Build main process only
+- `npm run build:renderer` - Build renderer only
+- `npm run package` - Package the app for distribution
+
+### Architecture
+
+This app uses:
+
+- **Frontend**: React + TypeScript + Tailwind CSS v4
+- **Backend**: Electron main process (Node.js)
+- **Build Tools**: Vite + PostCSS
+- **Styling**: Tailwind CSS via PostCSS plugin (avoids ESM/CJS conflicts)
+
+### Tailwind CSS Setup
+
+The project uses Tailwind CSS v4 with PostCSS integration:
+
+- **Configuration**: `postcss.config.js` + `tailwind.config.js`
+- **Import**: Tailwind is imported via `@import 'tailwindcss';` in CSS files
+- **Plugin**: Uses `@tailwindcss/postcss` (not `@tailwindcss/vite`) for broader compatibility
+- **Custom Colors**: Defines `primary-*` color palette in `tailwind.config.js`
+
+If you encounter Tailwind-related issues:
+1. Ensure Node.js v18+ for best ESM support
+2. Check that PostCSS config exists and includes `@tailwindcss/postcss`
+3. Verify `@import 'tailwindcss';` is in your CSS entry point
+4. Run `npm run dev:renderer` to test Vite compilation only
+
+### Electron + Vite Integration
+
+The setup separates concerns:
+- **Renderer Process**: Built with Vite (ESM-friendly)
+- **Main Process**: Built with TypeScript compiler (CommonJS compatible)
+- **Development**: Hot reloading for renderer, restart for main process
+
+### Testing Tailwind
+
+To verify Tailwind is working, you can import the test component:
+```typescript
+import TailwindTest from './components/TailwindTest';
+```
+
+---
+
 ## ⚠️ Disclaimer
 
 This app is designed to help with self-accountability and should not be considered a security tool. Determined users can always disable or bypass the monitoring. The effectiveness depends on your commitment to using it honestly.
