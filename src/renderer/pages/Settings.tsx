@@ -126,7 +126,7 @@ const Settings: React.FC = () => {
               onChange={(value) => setLocalSettings({ ...localSettings, checkOutTime: value })}
             />
           </div>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
+          <p className="text-base-content opacity-70">
             Monitoring will automatically start when you check in during these hours.
           </p>
         </div>
@@ -153,21 +153,18 @@ const Settings: React.FC = () => {
 
           {localSettings.restrictedApps.length > 0 && (
             <div className="space-y-2">
-              <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              <h4 className="text-sm font-medium text-base-content">
                 Current Restricted Apps:
               </h4>
               <div className="flex flex-wrap gap-2">
                 {localSettings.restrictedApps.map((app) => (
-                  <div
-                    key={app}
-                    className="flex items-center space-x-2 px-3 py-1 bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-200 rounded-full text-sm"
-                  >
+                  <div key={app} className="badge badge-error gap-2">
                     <span>{app}</span>
                     <button
                       onClick={() => handleRemoveApp(app)}
-                      className="text-red-600 hover:text-red-800 dark:text-red-300 dark:hover:text-red-100"
+                      className="btn btn-ghost btn-xs hover:btn-error"
                     >
-                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                      <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                       </svg>
                     </button>
@@ -177,11 +174,12 @@ const Settings: React.FC = () => {
             </div>
           )}
 
-          <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-            <p className="text-sm text-blue-800 dark:text-blue-200">
-              💡 <strong>Tip:</strong> Add executable names like "chrome.exe", "steam.exe", "discord.exe". 
+          <div className="alert alert-info">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="stroke-current shrink-0 w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <div>
+              <strong>Tip:</strong> Add executable names like "chrome.exe", "steam.exe", "discord.exe". 
               The app will detect when these applications are running and send notifications.
-            </p>
+            </div>
           </div>
         </div>
       </Card>
@@ -207,21 +205,18 @@ const Settings: React.FC = () => {
 
           {localSettings.monitoringKeywords.length > 0 && (
             <div className="space-y-2">
-              <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              <h4 className="text-sm font-medium text-base-content">
                 Current Keywords:
               </h4>
               <div className="flex flex-wrap gap-2">
                 {localSettings.monitoringKeywords.map((keyword) => (
-                  <div
-                    key={keyword}
-                    className="flex items-center space-x-2 px-3 py-1 bg-yellow-100 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-200 rounded-full text-sm"
-                  >
+                  <div key={keyword} className="badge badge-warning gap-2">
                     <span>{keyword}</span>
                     <button
                       onClick={() => handleRemoveKeyword(keyword)}
-                      className="text-yellow-600 hover:text-yellow-800 dark:text-yellow-300 dark:hover:text-yellow-100"
+                      className="btn btn-ghost btn-xs hover:btn-warning"
                     >
-                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                      <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                       </svg>
                     </button>
@@ -231,11 +226,12 @@ const Settings: React.FC = () => {
             </div>
           )}
 
-          <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-            <p className="text-sm text-blue-800 dark:text-blue-200">
-              💡 <strong>Tip:</strong> Add keywords that appear in window titles of distracting content. 
+          <div className="alert alert-info">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="stroke-current shrink-0 w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <div>
+              <strong>Tip:</strong> Add keywords that appear in window titles of distracting content. 
               Examples: youtube, netflix, facebook, twitter, reddit, games, memes.
-            </p>
+            </div>
           </div>
         </div>
       </Card>
@@ -255,14 +251,14 @@ const Settings: React.FC = () => {
             label="Start with system (launch at login)"
           />
 
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Theme Preference
+          <div className="form-control">
+            <label className="label">
+              <span className="label-text font-medium">Theme Preference</span>
             </label>
             <select
               value={localSettings.theme || 'auto'}
               onChange={(e) => setLocalSettings({ ...localSettings, theme: e.target.value as 'light' | 'dark' | 'auto' })}
-              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              className="select select-bordered w-full"
             >
               <option value="auto">Auto (follow system)</option>
               <option value="light">Light</option>

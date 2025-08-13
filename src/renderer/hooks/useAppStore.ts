@@ -144,6 +144,32 @@ export const useAppStore = create<AppStore>()(
         set({ isLoading: true, error: undefined });
         
         if (!window.electronAPI?.getSettings) {
+          // In development mode, provide mock settings
+          if (process.env.NODE_ENV === 'development') {
+            console.warn('Electron API not available in development mode. Using mock settings.');
+            const mockSettings: AppSettings = {
+              discordWebhook: 'https://discord.com/api/webhooks/123456789/example-webhook-url',
+              checkInTime: '09:00',
+              checkOutTime: '17:00',
+              restrictedApps: ['steam.exe', 'chrome.exe', 'discord.exe'],
+              monitoringKeywords: ['youtube', 'netflix', 'reddit', 'twitter'],
+              theme: 'auto',
+              autoStart: false,
+              minimizeToTray: true,
+            };
+            set({ settings: mockSettings });
+            
+            // Also set mock session data
+            set((state) => ({
+              session: {
+                ...state.session,
+                isCheckedIn: false,
+                isMonitoring: false,
+                status: 'checked-out',
+              },
+            }));
+            return;
+          }
           throw new Error('Electron API not available');
         }
 
@@ -177,6 +203,14 @@ export const useAppStore = create<AppStore>()(
         set({ isLoading: true, error: undefined });
         
         if (!window.electronAPI?.saveSettings) {
+          // In development mode, just update local state
+          if (process.env.NODE_ENV === 'development') {
+            console.warn('Electron API not available in development mode. Updating local state only.');
+            set((state) => ({
+              settings: { ...state.settings, ...newSettings },
+            }));
+            return;
+          }
           throw new Error('Electron API not available');
         }
 
@@ -202,6 +236,19 @@ export const useAppStore = create<AppStore>()(
         set({ isLoading: true, error: undefined });
         
         if (!window.electronAPI?.setCheckedIn) {
+          // In development mode, simulate check-in
+          if (process.env.NODE_ENV === 'development') {
+            console.warn('Electron API not available in development mode. Simulating check-in.');
+            set((state) => ({
+              session: {
+                ...state.session,
+                isCheckedIn: true,
+                checkInTime: new Date(),
+                status: 'checked-in',
+              },
+            }));
+            return;
+          }
           throw new Error('Electron API not available');
         }
 
