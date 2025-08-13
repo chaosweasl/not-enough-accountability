@@ -11,6 +11,8 @@ import * as path from 'node:path';
 import * as fs from 'node:fs';
 import { exec } from 'child_process';
 import { autoUpdater } from 'electron-updater';
+import squirrelStartup from 'electron-squirrel-startup';
+import fetch from 'node-fetch';
 
 // ------------------- Configure cache directories before app starts -------------------
 // Fix cache creation issues by ensuring proper cache directory setup
@@ -83,7 +85,7 @@ if (!app.isReady()) {
 }
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
-if (require('electron-squirrel-startup')) {
+if (squirrelStartup) {
   app.quit();
 }
 
@@ -543,7 +545,6 @@ const sendDiscordNotification = async (message: string): Promise<boolean> => {
   }
 
   try {
-    const fetch = require('node-fetch');
     console.log('Sending Discord notification to', settings.discordWebhook);
     const response = await fetch(settings.discordWebhook, {
       method: 'POST',
@@ -819,7 +820,6 @@ ipcMain.handle('send-discord-message', async (event, message: string) => {
 
 ipcMain.handle('test-discord-webhook', async (event, webhookUrl: string) => {
   try {
-    const fetch = require('node-fetch');
     const response = await fetch(webhookUrl, {
       method: 'POST',
       headers: {
