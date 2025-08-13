@@ -379,14 +379,50 @@ export const useAppStore = create<AppStore>()(
         set({ isLoading: true, error: undefined });
         
         if (!window.electronAPI?.getActivityLog) {
+          // In development mode, provide mock data instead of throwing an error
+          if (process.env.NODE_ENV === 'development') {
+            console.warn('Electron API not available in development mode. Using mock data.');
+            const mockViolations: ViolationEvent[] = [
+              {
+                id: '1',
+                timestamp: new Date(),
+                type: 'app',
+                trigger: 'steam.exe',
+                windowTitle: 'Steam - Friend Activity',
+                action: 'warned',
+                severity: 'medium',
+              },
+              {
+                id: '2',
+                timestamp: new Date(Date.now() - 3600000),
+                type: 'keyword',
+                trigger: 'youtube',
+                windowTitle: 'YouTube - Chrome',
+                action: 'warned',
+                severity: 'low',
+              }
+            ];
+            set({ violations: mockViolations });
+            return;
+          }
           throw new Error('Electron API not available');
         }
 
         const violations = await window.electronAPI.getActivityLog();
-        set({ violations });
+        // Ensure violations is an array and convert timestamp strings to Date objects
+        const processedViolations = Array.isArray(violations) 
+          ? violations.map(v => ({
+              ...v,
+              timestamp: typeof v.timestamp === 'string' ? new Date(v.timestamp) : v.timestamp
+            }))
+          : [];
+        
+        set({ violations: processedViolations });
       } catch (error) {
         console.error('Failed to load activity log:', error);
         set({ error: error instanceof Error ? error.message : 'Failed to load activity log' });
+        // In case of error, still set violations to empty array to prevent infinite loading
+        set({ violations: [] });
       } finally {
         set({ isLoading: false });
       }

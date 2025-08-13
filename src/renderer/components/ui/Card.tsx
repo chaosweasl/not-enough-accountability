@@ -19,20 +19,19 @@ const Card: React.FC<CardProps> = ({
   return (
     <div
       className={cn(
-        'bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700',
-        paddingClasses[padding],
+        'card bg-base-100 shadow-lg border border-base-200',
         className
       )}
       {...props}
     >
-      {title && (
-        <div className="mb-4">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+      <div className={cn('card-body', paddingClasses[padding])}>
+        {title && (
+          <h2 className="card-title text-base-content mb-2">
             {title}
           </h2>
-        </div>
-      )}
-      {children}
+        )}
+        {children}
+      </div>
     </div>
   );
 };

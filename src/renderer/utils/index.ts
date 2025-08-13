@@ -191,13 +191,13 @@ export function getStatusDisplay(status: string): { text: string; color: string 
 export function getViolationSeverityDisplay(severity: string): { text: string; color: string } {
   switch (severity) {
     case 'low':
-      return { text: 'Low', color: 'text-green-600 bg-green-100' };
+      return { text: 'Low', color: 'badge-success' };
     case 'medium':
-      return { text: 'Medium', color: 'text-yellow-600 bg-yellow-100' };
+      return { text: 'Medium', color: 'badge-warning' };
     case 'high':
-      return { text: 'High', color: 'text-red-600 bg-red-100' };
+      return { text: 'High', color: 'badge-error' };
     default:
-      return { text: 'Unknown', color: 'text-gray-600 bg-gray-100' };
+      return { text: 'Unknown', color: 'badge-ghost' };
   }
 }
 
@@ -287,18 +287,13 @@ export const storage = {
 export const theme = {
   isDark(): boolean {
     if (typeof window === 'undefined') return false;
-    return document.documentElement.classList.contains('dark');
+    return document.documentElement.getAttribute('data-theme') === 'dark';
   },
 
   setDark(dark: boolean): void {
     if (typeof window === 'undefined') return;
     
-    if (dark) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-    
+    document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
     storage.set('theme', dark ? 'dark' : 'light');
   },
 
