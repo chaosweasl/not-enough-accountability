@@ -49,43 +49,35 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange }) => {
   ];
 
   return (
-    <aside className="w-64 bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 h-full overflow-y-auto">
-      <nav className="p-4 space-y-2">
+    <aside className="w-64 bg-base-100 border-r border-base-300 h-full overflow-y-auto">
+      <nav className="menu p-4 space-y-2">
         {navItems.map((item) => (
-          <button
-            key={item.id}
-            onClick={() => onTabChange(item.id)}
-            className={cn(
-              'w-full text-left p-3 rounded-lg transition-colors group',
-              activeTab === item.id
-                ? 'bg-primary-100 text-primary-900 dark:bg-primary-900 dark:text-primary-100'
-                : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
-            )}
-          >
-            <div className="flex items-center space-x-3">
-              <div
-                className={cn(
-                  'flex-shrink-0',
-                  activeTab === item.id
-                    ? 'text-primary-600 dark:text-primary-400'
-                    : 'text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300'
-                )}
-              >
-                {item.icon}
-              </div>
-              <div className="flex-1">
-                <div className="font-medium">{item.label}</div>
-                <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  {item.description}
+          <li key={item.id}>
+            <button
+              onClick={() => onTabChange(item.id)}
+              className={cn(
+                'w-full text-left p-3 rounded-lg transition-colors',
+                activeTab === item.id && 'active'
+              )}
+            >
+              <div className="flex items-center space-x-3">
+                <div className="flex-shrink-0">
+                  {item.icon}
+                </div>
+                <div className="flex-1">
+                  <div className="font-medium">{item.label}</div>
+                  <div className="text-xs opacity-70 mt-1">
+                    {item.description}
+                  </div>
                 </div>
               </div>
-            </div>
-          </button>
+            </button>
+          </li>
         ))}
       </nav>
       
-      <div className="p-4 border-t border-gray-200 dark:border-gray-700 mt-auto">
-        <div className="text-xs text-gray-500 dark:text-gray-400 text-center">
+      <div className="p-4 border-t border-base-300 mt-auto">
+        <div className="text-xs text-base-content opacity-50 text-center">
           Version {window.electronAPI ? 'Loading...' : '1.1.0'}
         </div>
       </div>

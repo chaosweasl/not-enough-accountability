@@ -32,37 +32,36 @@ const Header: React.FC = () => {
   };
 
   return (
-    <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            🎯 Accountability Tracker
-          </h1>
-          <div className="flex space-x-2">
-            <span
-              className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                session.isCheckedIn
-                  ? 'bg-success-100 text-success-800 dark:bg-success-900 dark:text-success-200'
-                  : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
-              }`}
-            >
-              {statusDisplay.text}
-            </span>
-            {session.isMonitoring && (
-              <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-primary-100 text-primary-800 dark:bg-primary-900 dark:text-primary-200 animate-pulse-slow">
-                Monitoring Active
-              </span>
-            )}
-          </div>
-        </div>
+    <header className="navbar bg-base-100 border-b border-base-300 px-6">
+      <div className="navbar-start">
+        <h1 className="text-2xl font-bold text-base-content">
+          🎯 Accountability Tracker
+        </h1>
+      </div>
 
+      <div className="navbar-center">
+        <div className="flex space-x-2">
+          <div className={`badge ${
+            session.isCheckedIn ? 'badge-success' : 'badge-ghost'
+          }`}>
+            {statusDisplay.text}
+          </div>
+          {session.isMonitoring && (
+            <div className="badge badge-primary animate-pulse">
+              Monitoring Active
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="navbar-end">
         <div className="flex items-center space-x-4">
           <div className="text-right">
-            <div className="text-lg font-mono text-gray-900 dark:text-white">
+            <div className="text-lg font-mono text-base-content">
               {currentTime.toLocaleTimeString()}
             </div>
             {session.isCheckedIn && (
-              <div className="text-sm text-gray-600 dark:text-gray-400">
+              <div className="text-sm text-base-content opacity-70">
                 {formatSessionDuration()}
               </div>
             )}
@@ -70,7 +69,7 @@ const Header: React.FC = () => {
           
           <button
             onClick={toggleTheme}
-            className="p-2 rounded-md text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            className="btn btn-ghost btn-circle"
             title="Toggle theme"
           >
             <svg

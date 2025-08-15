@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useAppStore } from '../hooks/useAppStore';
 import { Card, Button, Modal } from '../components/ui';
 import { formatRelativeTime, getViolationSeverityDisplay } from '../utils';
@@ -20,9 +20,14 @@ const ActivityLog: React.FC = () => {
     searchTerm: '',
   });
 
-  useEffect(() => {
+  // Memoize the load function to prevent infinite re-renders
+  const memoizedLoadActivityLog = useCallback(() => {
     loadActivityLog();
   }, [loadActivityLog]);
+
+  useEffect(() => {
+    memoizedLoadActivityLog();
+  }, [memoizedLoadActivityLog]);
 
   const handleExport = async () => {
     try {
@@ -132,49 +137,33 @@ const ActivityLog: React.FC = () => {
     <div className="space-y-6">
       {/* Stats Overview */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card padding="sm">
-          <div className="text-center">
-            <div className="text-2xl font-bold text-gray-900 dark:text-white">
-              {violationStats.total}
-            </div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">
-              Total Violations
-            </div>
+        <div className="stats shadow">
+          <div className="stat">
+            <div className="stat-title">Total Violations</div>
+            <div className="stat-value text-primary">{violationStats.total}</div>
           </div>
-        </Card>
+        </div>
 
-        <Card padding="sm">
-          <div className="text-center">
-            <div className="text-2xl font-bold text-red-600 dark:text-red-400">
-              {violationStats.today}
-            </div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">
-              Today
-            </div>
+        <div className="stats shadow">
+          <div className="stat">
+            <div className="stat-title">Today</div>
+            <div className="stat-value text-error">{violationStats.today}</div>
           </div>
-        </Card>
+        </div>
 
-        <Card padding="sm">
-          <div className="text-center">
-            <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-              {violationStats.apps}
-            </div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">
-              App Violations
-            </div>
+        <div className="stats shadow">
+          <div className="stat">
+            <div className="stat-title">App Violations</div>
+            <div className="stat-value text-info">{violationStats.apps}</div>
           </div>
-        </Card>
+        </div>
 
-        <Card padding="sm">
-          <div className="text-center">
-            <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
-              {violationStats.keywords}
-            </div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">
-              Keyword Violations
-            </div>
+        <div className="stats shadow">
+          <div className="stat">
+            <div className="stat-title">Keyword Violations</div>
+            <div className="stat-value text-warning">{violationStats.keywords}</div>
           </div>
-        </Card>
+        </div>
       </div>
 
       {/* Filters and Actions */}
@@ -183,8 +172,8 @@ const ActivityLog: React.FC = () => {
           {/* Filter Controls */}
           <div className="flex flex-wrap gap-4 items-center">
             <div className="flex items-center space-x-2">
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                Type:
+              <label className="label">
+                <span className="label-text font-medium">Type:</span>
               </label>
               <select
                 value={filters.type}
@@ -194,7 +183,7 @@ const ActivityLog: React.FC = () => {
                     type: e.target.value as FilterOptions['type'],
                   })
                 }
-                className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                className="select select-bordered select-sm"
               >
                 <option value="all">All</option>
                 <option value="app">Apps</option>
@@ -203,8 +192,8 @@ const ActivityLog: React.FC = () => {
             </div>
 
             <div className="flex items-center space-x-2">
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                Period:
+              <label className="label">
+                <span className="label-text font-medium">Period:</span>
               </label>
               <select
                 value={filters.dateRange}
@@ -214,7 +203,7 @@ const ActivityLog: React.FC = () => {
                     dateRange: e.target.value as FilterOptions['dateRange'],
                   })
                 }
-                className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                className="select select-bordered select-sm"
               >
                 <option value="today">Today</option>
                 <option value="week">Last Week</option>
@@ -231,7 +220,7 @@ const ActivityLog: React.FC = () => {
                 onChange={(e) =>
                   setFilters({ ...filters, searchTerm: e.target.value })
                 }
-                className="w-full px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400"
+                className="input input-bordered input-sm w-full"
               />
             </div>
           </div>
@@ -263,7 +252,7 @@ const ActivityLog: React.FC = () => {
           </div>
 
           {/* Results Summary */}
-          <div className="text-sm text-gray-600 dark:text-gray-400">
+          <div className="text-sm text-base-content opacity-70">
             Showing {filteredViolations.length} of {violations.length}{' '}
             violations
           </div>
@@ -304,7 +293,7 @@ const ActivityLog: React.FC = () => {
           {Object.entries(groupedViolations).map(([date, dayViolations]) => (
             <Card key={date}>
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-2">
+                <h3 className="text-lg font-semibold text-base-content border-b border-base-300 pb-2">
                   {date} ({dayViolations.length} violation
                   {dayViolations.length !== 1 ? 's' : ''})
                 </h3>
@@ -318,57 +307,59 @@ const ActivityLog: React.FC = () => {
                     return (
                       <div
                         key={violation.id}
-                        className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700"
+                        className="card bg-base-100 border border-base-300 p-4"
                       >
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-3">
-                            <div
-                              className={`px-2 py-1 rounded text-xs font-medium ${
-                                violation.type === 'app'
-                                  ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
-                                  : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
-                              }`}
-                            >
-                              {violation.type === 'app'
-                                ? '📱 App'
-                                : '🔍 Keyword'}
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-3 mb-2">
+                              <div
+                                className={`badge ${
+                                  violation.type === 'app'
+                                    ? 'badge-info'
+                                    : 'badge-warning'
+                                }`}
+                              >
+                                {violation.type === 'app'
+                                  ? '📱 App'
+                                  : '🔍 Keyword'}
+                              </div>
+
+                              <span
+                                className={`badge ${severityDisplay.color}`}
+                              >
+                                {severityDisplay.text}
+                              </span>
+
+                              <span className="text-sm opacity-60">
+                                {formatRelativeTime(violation.timestamp)}
+                              </span>
                             </div>
 
-                            <span
-                              className={`px-2 py-1 rounded text-xs font-medium ${severityDisplay.color}`}
-                            >
-                              {severityDisplay.text}
-                            </span>
-
-                            <span className="text-sm text-gray-500 dark:text-gray-400">
-                              {formatRelativeTime(violation.timestamp)}
-                            </span>
-                          </div>
-
-                          <div className="mt-1">
-                            <p className="font-medium text-gray-900 dark:text-white">
-                              {violation.trigger}
-                            </p>
-                            {violation.windowTitle && (
-                              <p className="text-sm text-gray-600 dark:text-gray-400">
-                                Window: {violation.windowTitle}
+                            <div>
+                              <p className="font-medium text-base-content">
+                                {violation.trigger}
                               </p>
-                            )}
+                              {violation.windowTitle && (
+                                <p className="text-sm opacity-70">
+                                  Window: {violation.windowTitle}
+                                </p>
+                              )}
+                            </div>
                           </div>
-                        </div>
 
-                        <div className="text-right">
-                          <div className="text-sm font-mono text-gray-600 dark:text-gray-400">
-                            {violation.timestamp.toLocaleTimeString()}
-                          </div>
-                          <div
-                            className={`text-xs px-2 py-1 rounded mt-1 ${
-                              violation.action === 'warned'
-                                ? 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200'
-                                : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
-                            }`}
-                          >
-                            {violation.action}
+                          <div className="text-right">
+                            <div className="text-sm font-mono opacity-70">
+                              {violation.timestamp.toLocaleTimeString()}
+                            </div>
+                            <div
+                              className={`badge mt-1 ${
+                                violation.action === 'warned'
+                                  ? 'badge-warning'
+                                  : 'badge-ghost'
+                              }`}
+                            >
+                              {violation.action}
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -388,24 +379,25 @@ const ActivityLog: React.FC = () => {
         title="Export Activity Log"
       >
         <div className="space-y-4">
-          <p className="text-gray-600 dark:text-gray-400">
+          <p className="text-base-content opacity-70">
             This will export all {violations.length} violations to a JSON file
             that you can save to your computer.
           </p>
 
-          <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
-            <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-1">
-              Export includes:
-            </h4>
-            <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
-              <li>• Violation timestamps and types</li>
-              <li>• Triggered applications and keywords</li>
-              <li>• Window titles and actions taken</li>
-              <li>• Severity levels and metadata</li>
-            </ul>
+          <div className="alert alert-info">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="stroke-current shrink-0 w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <div>
+              <h4 className="font-medium">Export includes:</h4>
+              <ul className="text-sm space-y-1 mt-1">
+                <li>• Violation timestamps and types</li>
+                <li>• Triggered applications and keywords</li>
+                <li>• Window titles and actions taken</li>
+                <li>• Severity levels and metadata</li>
+              </ul>
+            </div>
           </div>
 
-          <div className="flex justify-end space-x-2">
+          <div className="modal-action">
             <Button
               variant="secondary"
               onClick={() => setShowExportModal(false)}

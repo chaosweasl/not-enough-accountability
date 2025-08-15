@@ -1,7 +1,7 @@
-const tseslint = require('@typescript-eslint/eslint-plugin');
-const tsparser = require('@typescript-eslint/parser');
+import tseslint from '@typescript-eslint/eslint-plugin';
+import tsparser from '@typescript-eslint/parser';
 
-module.exports = [
+export default [
   {
     files: ['src/**/*.{ts,tsx}'],
     ignores: ['src/**/*.test.{ts,tsx}', 'src/**/*.spec.{ts,tsx}'],
@@ -17,9 +17,6 @@ module.exports = [
         __filename: 'readonly',
         Buffer: 'readonly',
         global: 'readonly',
-        require: 'readonly',
-        module: 'readonly',
-        exports: 'readonly',
         setTimeout: 'readonly',
         clearTimeout: 'readonly',
         setInterval: 'readonly',
