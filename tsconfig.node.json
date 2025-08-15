@@ -9,9 +9,10 @@
     "esModuleInterop": true,
     "strict": true,
     "resolveJsonModule": true,
-    "types": ["node", "electron"],
-    "typeRoots": ["./node_modules/@types", "./src/types"]
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true
   },
-  "include": ["src/index.ts", "src/preload.ts", "src/types/**/*", "forge.config.js"],
+  "include": ["src/main/**/*", "src/preload/**/*", "src/types/**/*", "forge.config.js"],
   "exclude": ["vite.config.ts", "src/renderer/**/*"]
 }
