@@ -62,6 +62,8 @@ export default function SetupWizard() {
       isSetupComplete: true,
       blockingEnabled: true,
     });
+    // Force a page reload to pick up the new settings
+    window.location.reload();
   };
 
   return (
@@ -73,12 +75,11 @@ export default function SetupWizard() {
             <div className="p-3 rounded-xl bg-gradient-to-br from-primary to-purple-600 shadow-lg">
               <Shield className="h-8 w-8 text-white" />
             </div>
-            <CardTitle className="text-3xl bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
-              Welcome to Accountability
-            </CardTitle>
+            <CardTitle className="text-3xl font-bold">Welcome to NEU</CardTitle>
           </div>
           <CardDescription className="text-base">
-            Let's set up your accountability tool in a few simple steps
+            Not Enough Accountability - Let's set up your accountability tool in
+            a few simple steps
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -92,7 +93,9 @@ export default function SetupWizard() {
                 <span>Step 1 of 3: Create a PIN</span>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="pin" className="text-base">Create PIN</Label>
+                <Label htmlFor="pin" className="text-base">
+                  Create PIN
+                </Label>
                 <Input
                   id="pin"
                   type="password"
@@ -104,7 +107,9 @@ export default function SetupWizard() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="confirmPin" className="text-base">Confirm PIN</Label>
+                <Label htmlFor="confirmPin" className="text-base">
+                  Confirm PIN
+                </Label>
                 <Input
                   id="confirmPin"
                   type="password"
@@ -115,12 +120,19 @@ export default function SetupWizard() {
                   className="h-11"
                 />
               </div>
-              {error && <p className="text-sm text-destructive font-medium bg-destructive/10 p-3 rounded-lg">{error}</p>}
+              {error && (
+                <p className="text-sm text-destructive font-medium bg-destructive/10 p-3 rounded-lg">
+                  {error}
+                </p>
+              )}
               <p className="text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg">
                 💡 This PIN will be required to disable blocking or modify
                 settings. Keep it safe!
               </p>
-              <Button onClick={handlePinSetup} className="w-full h-11 shadow-lg">
+              <Button
+                onClick={handlePinSetup}
+                className="w-full h-11 shadow-lg"
+              >
                 Continue →
               </Button>
             </div>
@@ -137,7 +149,9 @@ export default function SetupWizard() {
               </div>
               <div className="flex items-center justify-between p-4 rounded-lg border-2 bg-card">
                 <div className="space-y-0.5">
-                  <Label className="text-base font-medium">Enable Discord Notifications</Label>
+                  <Label className="text-base font-medium">
+                    Enable Discord Notifications
+                  </Label>
                   <p className="text-sm text-muted-foreground">
                     Get notified when apps are blocked or unblocked
                   </p>
@@ -150,7 +164,9 @@ export default function SetupWizard() {
               </div>
               {enableWebhook && (
                 <div className="space-y-2">
-                  <Label htmlFor="webhook" className="text-base">Discord Webhook URL</Label>
+                  <Label htmlFor="webhook" className="text-base">
+                    Discord Webhook URL
+                  </Label>
                   <Input
                     id="webhook"
                     type="url"
@@ -160,12 +176,16 @@ export default function SetupWizard() {
                     className="h-11"
                   />
                   <p className="text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg">
-                    💡 Create a webhook in Discord: Server Settings → Integrations
-                    → Webhooks
+                    💡 Create a webhook in Discord: Server Settings →
+                    Integrations → Webhooks
                   </p>
                 </div>
               )}
-              {error && <p className="text-sm text-destructive font-medium bg-destructive/10 p-3 rounded-lg">{error}</p>}
+              {error && (
+                <p className="text-sm text-destructive font-medium bg-destructive/10 p-3 rounded-lg">
+                  {error}
+                </p>
+              )}
               <div className="flex gap-3">
                 <Button
                   variant="outline"
@@ -174,7 +194,10 @@ export default function SetupWizard() {
                 >
                   ← Back
                 </Button>
-                <Button onClick={handleWebhookSetup} className="flex-1 h-11 shadow-lg">
+                <Button
+                  onClick={handleWebhookSetup}
+                  className="flex-1 h-11 shadow-lg"
+                >
                   Continue →
                 </Button>
               </div>
@@ -192,7 +215,9 @@ export default function SetupWizard() {
               </div>
               <div className="space-y-3">
                 <div className="rounded-xl bg-gradient-to-br from-primary/10 to-purple-600/10 p-5 border-2">
-                  <h3 className="font-semibold text-lg mb-3">What you can do:</h3>
+                  <h3 className="font-semibold text-lg mb-3">
+                    What you can do:
+                  </h3>
                   <ul className="space-y-2 text-sm">
                     <li className="flex items-start gap-2">
                       <span className="text-primary mt-0.5">✓</span>
@@ -204,7 +229,9 @@ export default function SetupWizard() {
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="text-primary mt-0.5">✓</span>
-                      <span>Block websites (requires browser processes to be killed)</span>
+                      <span>
+                        Block websites (requires browser processes to be killed)
+                      </span>
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="text-primary mt-0.5">✓</span>
@@ -217,8 +244,8 @@ export default function SetupWizard() {
                   </ul>
                 </div>
                 <p className="text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg">
-                  🔒 This is a free, open-source tool. No data is collected or sent
-                  anywhere except to your Discord webhook (if configured).
+                  🔒 This is a free, open-source tool. No data is collected or
+                  sent anywhere except to your Discord webhook (if configured).
                 </p>
               </div>
               <div className="flex gap-3">
@@ -229,8 +256,11 @@ export default function SetupWizard() {
                 >
                   ← Back
                 </Button>
-                <Button onClick={handleComplete} className="flex-1 h-11 shadow-lg">
-                  Start Using Accountability 🚀
+                <Button
+                  onClick={handleComplete}
+                  className="flex-1 h-11 shadow-lg"
+                >
+                  Start Using NEU 🚀
                 </Button>
               </div>
             </div>

@@ -1,7 +1,15 @@
 import { useState } from "react";
-import { Shield, Settings as SettingsIcon, Info } from "lucide-react";
+import {
+  Shield,
+  Settings as SettingsIcon,
+  Info,
+  Sun,
+  Moon,
+  Monitor,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSettings } from "@/hooks/useSettings";
+import { useTheme } from "@/components/ThemeProvider";
 import SetupWizard from "./components/SetupWizard";
 import Dashboard from "./components/Dashboard";
 import Settings from "./components/Settings";
@@ -12,27 +20,38 @@ type View = "dashboard" | "settings" | "about";
 
 function App() {
   const { settings } = useSettings();
+  const { theme, setTheme } = useTheme();
   const [currentView, setCurrentView] = useState<View>("dashboard");
 
   if (!settings.isSetupComplete) {
     return <SetupWizard />;
   }
 
+  const cycleTheme = () => {
+    if (theme === "light") setTheme("dark");
+    else if (theme === "dark") setTheme("system");
+    else setTheme("light");
+  };
+
+  const getThemeIcon = () => {
+    if (theme === "light") return <Sun className="h-4 w-4" />;
+    if (theme === "dark") return <Moon className="h-4 w-4" />;
+    return <Monitor className="h-4 w-4" />;
+  };
+
   return (
     <div className="min-h-screen bg-background">
-      {/* Header with gradient */}
-      <header className="border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-10 shadow-sm">
-        <div className="flex items-center justify-between px-6 py-4">
+      {/* Clean header */}
+      <header className="border-b border-border bg-card sticky top-0 z-10">
+        <div className="flex items-center justify-between px-6 py-3">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-gradient-to-br from-primary to-purple-600 shadow-lg">
-              <Shield className="h-6 w-6 text-white" />
+            <div className="p-2 rounded-lg bg-primary">
+              <Shield className="h-5 w-5 text-white" />
             </div>
             <div>
-              <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
-                Accountability
-              </h1>
-              <p className="text-sm text-muted-foreground">
-                Stay focused, stay productive
+              <h1 className="text-lg font-semibold">NEU</h1>
+              <p className="text-xs text-muted-foreground">
+                Not Enough Accountability
               </p>
             </div>
           </div>
@@ -42,7 +61,6 @@ function App() {
               variant={currentView === "dashboard" ? "default" : "ghost"}
               size="sm"
               onClick={() => setCurrentView("dashboard")}
-              className="transition-all duration-200 hover:scale-105"
             >
               <Shield className="mr-2 h-4 w-4" />
               Dashboard
@@ -51,7 +69,6 @@ function App() {
               variant={currentView === "settings" ? "default" : "ghost"}
               size="sm"
               onClick={() => setCurrentView("settings")}
-              className="transition-all duration-200 hover:scale-105"
             >
               <SettingsIcon className="mr-2 h-4 w-4" />
               Settings
@@ -60,11 +77,22 @@ function App() {
               variant={currentView === "about" ? "default" : "ghost"}
               size="sm"
               onClick={() => setCurrentView("about")}
-              className="transition-all duration-200 hover:scale-105"
             >
               <Info className="mr-2 h-4 w-4" />
               About
             </Button>
+
+            {/* Theme Toggle */}
+            <div className="ml-2 pl-2 border-l border-border">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={cycleTheme}
+                title={`Current theme: ${theme}`}
+              >
+                {getThemeIcon()}
+              </Button>
+            </div>
           </div>
         </div>
       </header>

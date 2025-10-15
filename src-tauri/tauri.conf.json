@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Accountability",
+  "productName": "NEU",
   "version": "0.1.0",
-  "identifier": "com.virtu.accountability",
+  "identifier": "com.virtu.neu",
   "build": {
     "beforeDevCommand": "pnpm dev",
     "devUrl": "http://localhost:1420",
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "Accountability",
+        "title": "NEU - Not Enough Accountability",
         "width": 1200,
         "height": 800,
         "minWidth": 800,

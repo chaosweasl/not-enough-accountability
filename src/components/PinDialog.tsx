@@ -88,9 +88,18 @@ export default function PinDialog({
               }}
             />
           </div>
-          {error && <p className="text-sm text-destructive">{error}</p>}
+          {error && (
+            <div className="rounded-lg bg-destructive/10 p-3 border border-destructive/20">
+              <p className="text-sm text-destructive font-medium">{error}</p>
+            </div>
+          )}
           <div className="flex gap-2">
-            <Button variant="outline" onClick={handleClose} className="flex-1">
+            <Button
+              variant="outline"
+              onClick={handleClose}
+              className="flex-1"
+              disabled={loading}
+            >
               Cancel
             </Button>
             <Button

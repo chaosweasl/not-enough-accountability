@@ -1,10 +1,10 @@
 import { AppSettings, BlockRule, WebsiteBlockRule, BlockEvent } from "@/types";
 
 const STORAGE_KEYS = {
-  SETTINGS: "accountability_settings",
-  BLOCK_RULES: "accountability_block_rules",
-  WEBSITE_RULES: "accountability_website_rules",
-  EVENTS: "accountability_events",
+  SETTINGS: "neu_settings",
+  BLOCK_RULES: "neu_block_rules",
+  WEBSITE_RULES: "neu_website_rules",
+  EVENTS: "neu_events",
 } as const;
 
 export const storage = {

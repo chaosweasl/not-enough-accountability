@@ -1,4 +1,4 @@
-# Accountability
+# NEU (Not Enough Accountability)
 
 A free, open-source application blocker and accountability tool to help you stay focused and productive. Built with Tauri, React, TypeScript, Tailwind CSS, and shadcn/ui.
 
@@ -23,7 +23,7 @@ A free, open-source application blocker and accountability tool to help you stay
 
 - **🚨 Emergency Killswitch** - Instantly disable all blocking for safety situations
 
-- **🎨 Modern UI** - Clean, intuitive interface built with shadcn/ui
+- **🎨 Modern UI** - Clean, intuitive interface built with shadcn/ui and featuring ON/OFF indicators for switches
 
 - **🔐 Privacy First** - All data stays on your device, no accounts required
 
@@ -41,8 +41,8 @@ A free, open-source application blocker and accountability tool to help you stay
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/accountability.git
-cd accountability
+git clone https://github.com/yourusername/not-enough-accountability.git
+cd not-enough-accountability
 
 # Install dependencies
 pnpm install
