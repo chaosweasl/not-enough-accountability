@@ -1,0 +1,106 @@
+@import "tailwindcss";
+
+@theme {
+  --color-background: 240 20% 98%;
+  --color-foreground: 240 10% 3.9%;
+  --color-card: 0 0% 100%;
+  --color-card-foreground: 240 10% 3.9%;
+  --color-popover: 0 0% 100%;
+  --color-popover-foreground: 240 10% 3.9%;
+  --color-primary: 262 83% 58%;
+  --color-primary-foreground: 0 0% 100%;
+  --color-secondary: 240 4.8% 95.9%;
+  --color-secondary-foreground: 240 5.9% 10%;
+  --color-muted: 240 4.8% 95.9%;
+  --color-muted-foreground: 240 3.8% 46.1%;
+  --color-accent: 262 90% 95%;
+  --color-accent-foreground: 262 83% 58%;
+  --color-destructive: 0 84.2% 60.2%;
+  --color-destructive-foreground: 0 0% 98%;
+  --color-border: 240 5.9% 90%;
+  --color-input: 240 5.9% 90%;
+  --color-ring: 262 83% 58%;
+  --radius-lg: 1rem;
+  --radius-md: calc(var(--radius-lg) - 2px);
+  --radius-sm: calc(var(--radius-lg) - 4px);
+}
+
+@media (prefers-color-scheme: dark) {
+  @theme {
+    --color-background: 240 10% 8%;
+    --color-foreground: 0 0% 98%;
+    --color-card: 240 8% 12%;
+    --color-card-foreground: 0 0% 98%;
+    --color-popover: 240 10% 8%;
+    --color-popover-foreground: 0 0% 98%;
+    --color-primary: 262 83% 68%;
+    --color-primary-foreground: 0 0% 100%;
+    --color-secondary: 240 3.7% 15.9%;
+    --color-secondary-foreground: 0 0% 98%;
+    --color-muted: 240 3.7% 15.9%;
+    --color-muted-foreground: 240 5% 64.9%;
+    --color-accent: 262 50% 18%;
+    --color-accent-foreground: 262 83% 68%;
+    --color-destructive: 0 62.8% 50%;
+    --color-destructive-foreground: 0 0% 98%;
+    --color-border: 240 3.7% 20%;
+    --color-input: 240 3.7% 15.9%;
+    --color-ring: 262 83% 68%;
+  }
+}
+
+* {
+  border-color: hsl(var(--color-border));
+}
+
+body {
+  background-color: hsl(var(--color-background));
+  color: hsl(var(--color-foreground));
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+  line-height: 1.6;
+}
+
+/* Smooth transitions */
+* {
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+/* Gradient background */
+body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(circle at 20% 50%, hsl(262 83% 58% / 0.08) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, hsl(220 83% 58% / 0.08) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: -1;
+}
+
+@media (prefers-color-scheme: dark) {
+  body::before {
+    background: 
+      radial-gradient(circle at 20% 50%, hsl(262 83% 58% / 0.12) 0%, transparent 50%),
+      radial-gradient(circle at 80% 80%, hsl(220 83% 58% / 0.12) 0%, transparent 50%);
+  }
+}
+
+/* Card animations */
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.card-animate {
+  animation: slideInUp 0.3s ease-out;
+}

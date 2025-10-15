@@ -1,205 +1,134 @@
-# 🎯 Not Enough Accountability
+# Accountability
 
-A desktop accountability system that monitors your computer usage during work hours and sends notifications to Discord when you use restricted apps or visit restricted websites. Keep yourself accountable to your productivity goals!
+A free, open-source application blocker and accountability tool to help you stay focused and productive. Built with Tauri, React, TypeScript, Tailwind CSS, and shadcn/ui.
+
+![Version](https://img.shields.io/badge/version-0.1.0-blue)
+![License](https://img.shields.io/badge/license-MIT-green)
 
 ## ✨ Features
 
-### 🔍 **Real-time Monitoring**
+- **🚫 Application Blocking** - Block distracting apps based on:
 
-- Monitors running applications every 5 seconds
-- Detects restricted keywords in window titles (YouTube, Netflix, etc.)
-- Rate-limited notifications (once per minute per violation)
-- Works with any browser and desktop application
+  - **Timer** - Block for a specific duration (e.g., 30 minutes, 2 hours)
+  - **Schedule** - Block on certain days and times (e.g., weekdays 9am-5pm)
+  - **Permanent** - Block until manually removed
 
-### 💬 **Discord Integration**
+- **🔒 PIN Protection** - Set a PIN to prevent easy bypassing of blocks
 
-- Sends violation alerts to your Discord server/group chat
-- Notifications include timestamps and detailed violation info
-- Test webhook functionality built-in
+- **💬 Discord Integration** - Optional webhook notifications for accountability partners:
 
-### ⏰ **Work Schedule Management**
+  - Get notified when apps are blocked
+  - Get notified when apps are unblocked
+  - Killswitch alerts
 
-- Configurable check-in/check-out times (default: 8 AM - 4 PM)
-- Automatic monitoring during work hours
-- Manual check-in/check-out with Discord notifications
+- **🚨 Emergency Killswitch** - Instantly disable all blocking for safety situations
 
-### 🚫 **Restriction Management**
+- **🎨 Modern UI** - Clean, intuitive interface built with shadcn/ui
 
-- Add/remove restricted applications (Steam, games, etc.)
-- Add/remove monitoring keywords (YouTube, social media, etc.)
-- Persistent settings storage
+- **🔐 Privacy First** - All data stays on your device, no accounts required
 
-### 🛡️ **Accountability Features**
+## 🚀 Getting Started
 
-- **Required explanations** for all monitoring actions:
-  - Stopping monitoring
-  - Pausing monitoring
-  - Temporarily disabling
-  - Quitting the application
-- All actions logged and sent to Discord with reasons
-- System tray integration - runs in background
+### Prerequisites
 
-### 📊 **Activity Logging**
+- [Node.js](https://nodejs.org/) (v18 or higher)
+- [pnpm](https://pnpm.io/) (recommended) or npm
+- [Rust](https://www.rust-lang.org/) (for building from source)
 
-- Local activity log with timestamps
-- Export logs to text files
-- Clear logging history
+### Installation
 
-## 🚀 Download & Installation
+#### From Source
 
-### Quick Download
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/accountability.git
+cd accountability
 
-Get the latest version from our [Releases page](https://github.com/chaosweasl/not-enough-accountability/releases):
+# Install dependencies
+pnpm install
 
-- **Windows**: Download `Not-Enough-Accountability-Setup.exe`
-- **macOS**: Download `Not-Enough-Accountability.dmg`
+# Run in development mode
+pnpm tauri dev
 
-### Installation Steps
+# Build for production
+pnpm tauri build
+```
 
-1. **Download** the appropriate file for your operating system
-2. **Install/Run** the application:
-   - **Windows**: Double-click the `.exe` file and follow the installer
-   - **macOS**: Open the `.dmg` file and drag the app to Applications
-3. **First launch**: The app will open with a setup wizard
+## 📖 Usage
 
-### ⚠️ Security Warning
+### Initial Setup
 
-**Important:** This application is not code-signed, which means your operating system may display security warnings:
+1. **Create a PIN** - Set up a 4+ digit PIN for protection
+2. **Configure Discord Webhook (Optional)** - Add a Discord webhook URL for notifications
+3. **Start Blocking** - Begin adding block rules
 
-- **Windows**: Windows Defender or antivirus software may flag the app as "potentially unwanted" or block installation
-  - Click "More info" → "Run anyway" if Windows SmartScreen blocks it
-  - You may need to temporarily disable real-time protection in Windows Defender
-  - Add the app folder to your antivirus exclusions if needed
+### Creating Block Rules
 
-- **macOS**: macOS Gatekeeper may prevent opening the app
-  - Right-click the app → "Open" → "Open" to bypass Gatekeeper
-  - Or go to System Preferences → Security & Privacy → "Open Anyway"
+1. Click **"Add Block Rule"** from the dashboard
+2. Search and select an application from the list of running processes
+3. Choose your blocking type:
+   - **Permanent** - Blocks indefinitely
+   - **Timer** - Blocks for X minutes
+   - **Schedule** - Blocks on specific days/times
+4. Click **"Add Rule"**
 
-- **Why this happens**: Code signing certificates are expensive ($400+/year) for open-source projects
-- **Is it safe?**: Yes! The source code is fully open and auditable on GitHub
-- **Alternative**: Build from source if you prefer (see CONTRIBUTING.md)
+### Discord Integration
 
-### First Time Setup
+To enable Discord notifications:
 
-1. **Configure Discord Webhook** (Recommended)
-   - Create a Discord webhook in your server/channel
-   - Paste the webhook URL in the app settings
-   - Test the connection
+1. Create a webhook in your Discord server:
 
-2. **Set Work Hours**
-   - Configure your check-in time (default: 08:00)
-   - Configure your check-out time (default: 16:00)
+   - Go to Server Settings → Integrations → Webhooks
+   - Click "New Webhook"
+   - Copy the webhook URL
 
-3. **Add Restricted Items**
-   - Add applications you want to avoid (e.g., `steam.exe`, `chrome.exe`)
-   - Add keywords to monitor (e.g., `youtube`, `netflix`, `reddit`)
+2. In Accountability:
+   - Go to Settings
+   - Enable "Discord Notifications"
+   - Paste your webhook URL
+   - Click "Test Webhook" to verify
+   - Configure notification preferences
 
-4. **Save Settings** and start monitoring!
+### Emergency Killswitch
 
-### Auto-Updates
+If you need to disable all blocking immediately:
 
-The app includes automatic update functionality:
+1. Click the **"Killswitch"** button in the dashboard
+2. Confirm the action (no PIN required)
+3. All blocking will be disabled and your accountability partner will be notified (if configured)
 
-- **Automatic Check**: Checks for updates on startup
-- **Manual Check**: Use the "Check for Updates" button in settings
-- **Background Download**: Updates download in the background
-- **Install Prompt**: You'll be prompted when an update is ready to install
+## 🛠️ Tech Stack
 
-## 🔧 Configuration
-
-### Discord Webhook Setup
-
-1. Go to your Discord server settings
-2. Navigate to Integrations → Webhooks
-3. Create a new webhook
-4. Copy the webhook URL
-5. Paste it into the app's Discord Webhook URL field
-
-### Adding Restricted Applications
-
-- Use the executable name (e.g., `steam.exe`, `discord.exe`)
-- On Windows, you can find process names in Task Manager
-- The app will detect partial matches (e.g., `steam` will match `steam.exe`)
-
-### Adding Monitoring Keywords
-
-- Keywords are detected in window titles
-- Works great for browser tabs (YouTube, Netflix, Reddit, etc.)
-- Case-insensitive matching
-- Detects keywords in any application window title
-
-## 🖥️ System Tray
-
-The app runs in the system tray with these options:
-
-- **Show App** - Bring the main window to front
-- **Check In/Out** - Quick check-in or check-out
-- **Start/Stop Monitoring** - Toggle monitoring state
-- **Quit** - Exit the app (requires explanation)
-
-## 📋 How It Works
-
-### Monitoring Process
-
-1. **Every 5 seconds**: Checks running processes and active window titles
-2. **Violation Detection**: Compares against your restricted apps and keywords
-3. **Rate Limiting**: Only sends notifications once per minute per violation
-4. **Discord Notification**: Sends detailed violation info to your Discord channel
-
-### Accountability System
-
-- All control actions require written explanations
-- Explanations are logged locally and sent to Discord
-- Creates an audit trail of when and why monitoring was disabled
-- Prevents impulsive disabling of monitoring
-
-### Work Hour Integration
-
-- Automatically starts monitoring during configured work hours
-- Auto check-in/check-out at scheduled times
-- Pausing monitoring automatically resumes during work hours
+- **Frontend**: React 19, TypeScript
+- **UI**: Tailwind CSS v4, shadcn/ui
+- **Backend**: Rust, Tauri 2
+- **Process Management**: sysinfo
+- **HTTP**: reqwest (for Discord webhooks)
 
 ## 🔒 Privacy & Security
 
-- **Local Storage**: All settings and logs stored locally on your computer
-- **No Data Collection**: The app doesn't send any data except Discord notifications
-- **Open Source**: Full source code available for inspection
-- **No External Dependencies**: Uses only essential, trusted packages
+- ✅ **100% Free & Open Source** - No premium features, no paywalls
+- ✅ **No Data Collection** - Everything stays on your device
+- ✅ **No Accounts** - Just download and use
+- ✅ **Local Storage Only** - Settings stored in localStorage
+- ✅ **Optional Webhooks** - Discord integration is completely optional
 
 ## 🤝 Contributing
 
-Interested in contributing to the project? Check out our [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, guidelines, and how to get started with the codebase.
+Contributions are welcome! Please feel free to submit a Pull Request.
 
-## 🐛 Known Issues
+## 📝 Roadmap
 
-- **No code certification**: The app will be marked as a potential virus
-- **Tray Icon**: May not display on some systems (functionality still works)
-- **Window Title Detection**: Some applications may not report window titles
-- **macOS**: Limited testing on non-Windows platforms
+- [ ] macOS support
+- [ ] Linux support
+- [ ] Website blocking via hosts file modification
+- [ ] Statistics and usage reports
+- [ ] Import/Export block rules
 
-## 💡 Future Enhancements
+## Recommended IDE Setup
 
-- [ ] Auto-start on system boot
-- [ ] Screenshot capture on violations
-- [ ] Usage statistics and reports
-- [ ] Website blocking functionality
-- [ ] Mobile companion app
-- [ ] Custom notification sounds
-- [ ] Multiple Discord webhook support
-
-## 🆘 Support
-
-If you encounter issues:
-
-1. Check the [Issues](https://github.com/chaosweasl/not-enough-accountability/issues) page
-2. Enable developer tools in the app for debugging
-3. Check the activity log for error messages
-4. Create a new issue with detailed information
-
-## ⚠️ Disclaimer
-
-This app is designed to help with self-accountability and should not be considered a security tool. Determined users can always disable or bypass the monitoring. The effectiveness depends on your commitment to using it honestly.
+- [VS Code](https://code.visualstudio.com/) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
 
 ---
 
-**Stay accountable, stay productive! 🎯**
+Made with ❤️ for students and anyone seeking accountability
