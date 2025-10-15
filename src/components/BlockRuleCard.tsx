@@ -61,53 +61,43 @@ export default function BlockRuleCard({
   };
 
   return (
-    <Card className="overflow-hidden card-animate shadow-md hover:shadow-lg transition-all duration-200 hover:scale-[1.01] border-2">
-      <CardContent className="flex items-center justify-between p-5">
-        <div className="flex items-center gap-4 flex-1">
-          <div className={`p-3 rounded-xl ${active ? 'bg-gradient-to-br from-primary/20 to-purple-600/20' : 'bg-muted'}`}>
+    <Card>
+      <CardContent className="flex items-center justify-between p-4">
+        <div className="flex items-center gap-3 flex-1">
+          <div
+            className={`p-2 rounded-lg ${
+              active ? "bg-primary/10" : "bg-muted"
+            }`}
+          >
             {getIcon()}
           </div>
 
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
-              <h3 className="font-semibold text-base">{rule.appName}</h3>
-              <Badge 
+              <h3 className="font-semibold truncate">{rule.appName}</h3>
+              <Badge
                 variant={active ? "default" : "secondary"}
-                className={active ? "bg-gradient-to-r from-primary to-purple-600" : ""}
+                className="capitalize"
               >
                 {rule.type}
               </Badge>
             </div>
-            <p className="text-sm text-muted-foreground font-medium">
+            <p className="text-sm text-muted-foreground">
               {getRuleDescription()}
             </p>
-            <p className="text-xs text-muted-foreground/70 truncate mt-1">
+            <p className="text-xs text-muted-foreground truncate font-mono">
               {rule.appPath}
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
-            <Badge 
-              variant={active ? "default" : "secondary"}
-              className={`px-3 py-1 ${active ? 'bg-green-500 hover:bg-green-600' : ''}`}
-            >
-              {active ? "● Active" : "○ Inactive"}
-            </Badge>
-          </div>
+          <Badge variant={active ? "default" : "secondary"}>
+            {active ? "Active" : "Inactive"}
+          </Badge>
         </div>
 
-        <div className="flex items-center gap-3 ml-6">
-          <Switch 
-            checked={rule.isActive} 
-            onCheckedChange={onToggle}
-            className="scale-110"
-          />
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={onRemove}
-            className="hover:bg-destructive/10 transition-all duration-200 hover:scale-110"
-          >
+        <div className="flex items-center gap-3 ml-4 pl-4 border-l border-border">
+          <Switch checked={rule.isActive} onCheckedChange={onToggle} />
+          <Button variant="ghost" size="icon" onClick={onRemove}>
             <Trash2 className="h-4 w-4 text-destructive" />
           </Button>
         </div>
