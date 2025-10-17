@@ -5,8 +5,29 @@ import { storage } from "@/lib/storage";
 import { isRuleActive } from "@/lib/helpers";
 
 export function useBlocker() {
-  const [rules, setRulesState] = useState<BlockRule[]>(storage.getBlockRules());
+  const [rules, setRulesState] = useState<BlockRule[]>([]);
   const [isEnforcing, setIsEnforcing] = useState(false);
+
+  // Load rules on mount and when localStorage changes
+  useEffect(() => {
+    const loadRules = () => {
+      const storedRules = storage.getBlockRules();
+      setRulesState(storedRules);
+    };
+
+    // Load initial rules
+    loadRules();
+
+    // Listen for storage changes (e.g., from other tabs or components)
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === "neu_block_rules") {
+        loadRules();
+      }
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, []);
 
   const setRules = useCallback(
     (newRules: BlockRule[] | ((prev: BlockRule[]) => BlockRule[])) => {
