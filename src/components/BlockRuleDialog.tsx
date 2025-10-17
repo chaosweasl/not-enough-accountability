@@ -84,9 +84,7 @@ export default function BlockRuleDialog({
       // This prevents the same app from being added multiple times
       const allApps = [...validRunningProcesses, ...validInstalledApps];
       const uniqueApps = Array.from(
-        new Map(
-          allApps.map((app) => [app.path.toLowerCase(), app])
-        ).values()
+        new Map(allApps.map((app) => [app.path.toLowerCase(), app])).values()
       );
 
       // Sort alphabetically by name

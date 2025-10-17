@@ -19,7 +19,9 @@ export default function Settings() {
   const { settings, updateSettings } = useSettings();
   const [webhookUrl, setWebhookUrl] = useState(settings.webhookUrl || "");
   const [showPinDialog, setShowPinDialog] = useState(false);
-  const [pendingAction, setPendingAction] = useState<"webhook" | "changePin" | null>(null);
+  const [pendingAction, setPendingAction] = useState<
+    "webhook" | "changePin" | null
+  >(null);
   const [testingWebhook, setTestingWebhook] = useState(false);
   const [webhookTestResult, setWebhookTestResult] = useState<string>("");
 
