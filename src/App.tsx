@@ -56,7 +56,7 @@ function App() {
         initial={{ x: -100, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
         transition={{ duration: 0.3, ease: "easeOut" }}
-        className="w-72 border-r border-border bg-card flex flex-col shadow-2xl"
+        className="w-72 border-r border-border bg-card flex flex-col shadow-2xl h-screen sticky top-0"
       >
         {/* Logo Section */}
         <motion.div

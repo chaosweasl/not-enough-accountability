@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { invoke } from "@tauri-apps/api/core";
 import { Power, PowerOff, Plus, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,22 +29,91 @@ export default function Dashboard() {
 
   const activeRulesCount = rules.filter(isRuleActive).length;
 
-  const handleToggleBlocking = () => {
+  const handleToggleBlocking = async () => {
     if (settings.blockingEnabled) {
       // Need PIN to disable
-      setPendingAction(() => () => {
+      setPendingAction(() => async () => {
         updateSettings({ blockingEnabled: false });
         setIsEnforcing(false);
+
+        // Send webhook notification if enabled
+        if (
+          settings.webhookEnabled &&
+          settings.webhookUrl &&
+          settings.sendUnblockNotifications
+        ) {
+          try {
+            await invoke("send_discord_webhook", {
+              webhookUrl: settings.webhookUrl,
+              message:
+                "🔓 **Blocking Disabled**\n\nAll application blocking has been disabled.",
+            });
+          } catch (error) {
+            console.error("Failed to send webhook:", error);
+          }
+        }
       });
       setShowPinDialog(true);
     } else {
       updateSettings({ blockingEnabled: true });
       setIsEnforcing(true);
+
+      // Send webhook notification if enabled
+      if (
+        settings.webhookEnabled &&
+        settings.webhookUrl &&
+        settings.sendBlockNotifications
+      ) {
+        try {
+          await invoke("send_discord_webhook", {
+            webhookUrl: settings.webhookUrl,
+            message:
+              "🔒 **Blocking Enabled**\n\nAll application blocking has been enabled.",
+          });
+        } catch (error) {
+          console.error("Failed to send webhook:", error);
+        }
+      }
     }
   };
 
   const handleRemoveRule = (ruleId: string) => {
-    setPendingAction(() => () => removeRule(ruleId));
+    const rule = rules.find((r) => r.id === ruleId);
+    setPendingAction(() => async () => {
+      removeRule(ruleId);
+
+      // Send webhook notification if enabled
+      if (
+        rule &&
+        settings.webhookEnabled &&
+        settings.webhookUrl &&
+        settings.sendUnblockNotifications
+      ) {
+        try {
+          let message = `🗑️ **Block Rule Deleted**\n\n**App:** ${rule.appName}\n**Type:** ${rule.type}`;
+
+          if (rule.type === "timer" && rule.duration) {
+            message += `\n**Duration:** ${rule.duration} minutes`;
+          } else if (rule.type === "schedule" && rule.days) {
+            const dayNames = rule.days
+              .map((d) => ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][d])
+              .join(", ");
+            message += `\n**Days:** ${dayNames}\n**Time:** ${
+              rule.startHour || 0
+            }:${String(rule.startMinute || 0).padStart(2, "0")} - ${
+              rule.endHour || 0
+            }:${String(rule.endMinute || 0).padStart(2, "0")}`;
+          }
+
+          await invoke("send_discord_webhook", {
+            webhookUrl: settings.webhookUrl,
+            message,
+          });
+        } catch (error) {
+          console.error("Failed to send webhook:", error);
+        }
+      }
+    });
     setShowPinDialog(true);
   };
 

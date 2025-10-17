@@ -199,119 +199,132 @@ export default function BlockRuleDialog({
             )}
           </div>
 
-          {selectedApp && (
-            <>
-              <div className="rounded-lg bg-muted p-3">
-                <p className="text-sm font-medium">
-                  Selected: {selectedApp.name}
-                </p>
-                <p className="text-xs text-muted-foreground truncate">
-                  {selectedApp.path}
-                </p>
-              </div>
-
-              {/* Rule Type */}
-              <Tabs
-                value={ruleType}
-                onValueChange={(v) => setRuleType(v as any)}
-              >
-                <TabsList className="grid w-full grid-cols-3">
-                  <TabsTrigger value="permanent">Permanent</TabsTrigger>
-                  <TabsTrigger value="timer">Timer</TabsTrigger>
-                  <TabsTrigger value="schedule">Schedule</TabsTrigger>
-                </TabsList>
-
-                <TabsContent value="permanent" className="space-y-2">
-                  <p className="text-sm text-muted-foreground">
-                    Block this app permanently until manually removed
+          {/* Selected App and Rule Configuration - Fixed height to prevent jumping */}
+          <div className="min-h-[300px]">
+            {selectedApp && (
+              <>
+                <div className="rounded-lg bg-muted p-3">
+                  <p className="text-sm font-medium">
+                    Selected: {selectedApp.name}
                   </p>
-                </TabsContent>
+                  <p className="text-xs text-muted-foreground truncate">
+                    {selectedApp.path}
+                  </p>
+                </div>
 
-                <TabsContent value="timer" className="space-y-3">
-                  <div className="space-y-2">
-                    <Label htmlFor="duration">Duration (minutes)</Label>
-                    <Input
-                      id="duration"
-                      type="number"
-                      value={duration}
-                      onChange={(e) => setDuration(e.target.value)}
-                      min="1"
-                      max="1440"
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Block will automatically expire after this time
+                {/* Rule Type */}
+                <Tabs
+                  value={ruleType}
+                  onValueChange={(v) => setRuleType(v as any)}
+                  className="mt-4"
+                >
+                  <TabsList className="grid w-full grid-cols-3">
+                    <TabsTrigger value="permanent">Permanent</TabsTrigger>
+                    <TabsTrigger value="timer">Timer</TabsTrigger>
+                    <TabsTrigger value="schedule">Schedule</TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent
+                    value="permanent"
+                    className="space-y-2 min-h-[150px]"
+                  >
+                    <p className="text-sm text-muted-foreground">
+                      Block this app permanently until manually removed
                     </p>
-                  </div>
-                </TabsContent>
+                  </TabsContent>
 
-                <TabsContent value="schedule" className="space-y-3">
-                  <div className="space-y-2">
-                    <Label>Days</Label>
-                    <div className="flex gap-2">
-                      {["S", "M", "T", "W", "T", "F", "S"].map((day, idx) => (
-                        <Button
-                          key={idx}
-                          type="button"
-                          variant={days.includes(idx) ? "default" : "outline"}
-                          size="sm"
-                          className="flex-1"
-                          onClick={() => toggleDay(idx)}
-                        >
-                          {day}
-                        </Button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
+                  <TabsContent
+                    value="timer"
+                    className="space-y-3 min-h-[150px]"
+                  >
                     <div className="space-y-2">
-                      <Label>Start Time</Label>
+                      <Label htmlFor="duration">Duration (minutes)</Label>
+                      <Input
+                        id="duration"
+                        type="number"
+                        value={duration}
+                        onChange={(e) => setDuration(e.target.value)}
+                        min="1"
+                        max="1440"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Block will automatically expire after this time
+                      </p>
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent
+                    value="schedule"
+                    className="space-y-3 min-h-[150px]"
+                  >
+                    <div className="space-y-2">
+                      <Label>Days</Label>
                       <div className="flex gap-2">
-                        <Input
-                          type="number"
-                          value={startHour}
-                          onChange={(e) => setStartHour(e.target.value)}
-                          min="0"
-                          max="23"
-                          placeholder="HH"
-                        />
-                        <Input
-                          type="number"
-                          value={startMinute}
-                          onChange={(e) => setStartMinute(e.target.value)}
-                          min="0"
-                          max="59"
-                          placeholder="MM"
-                        />
+                        {["S", "M", "T", "W", "T", "F", "S"].map((day, idx) => (
+                          <Button
+                            key={idx}
+                            type="button"
+                            variant={days.includes(idx) ? "default" : "outline"}
+                            size="sm"
+                            className="flex-1"
+                            onClick={() => toggleDay(idx)}
+                          >
+                            {day}
+                          </Button>
+                        ))}
                       </div>
                     </div>
 
-                    <div className="space-y-2">
-                      <Label>End Time</Label>
-                      <div className="flex gap-2">
-                        <Input
-                          type="number"
-                          value={endHour}
-                          onChange={(e) => setEndHour(e.target.value)}
-                          min="0"
-                          max="23"
-                          placeholder="HH"
-                        />
-                        <Input
-                          type="number"
-                          value={endMinute}
-                          onChange={(e) => setEndMinute(e.target.value)}
-                          min="0"
-                          max="59"
-                          placeholder="MM"
-                        />
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-2">
+                        <Label>Start Time</Label>
+                        <div className="flex gap-2">
+                          <Input
+                            type="number"
+                            value={startHour}
+                            onChange={(e) => setStartHour(e.target.value)}
+                            min="0"
+                            max="23"
+                            placeholder="HH"
+                          />
+                          <Input
+                            type="number"
+                            value={startMinute}
+                            onChange={(e) => setStartMinute(e.target.value)}
+                            min="0"
+                            max="59"
+                            placeholder="MM"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>End Time</Label>
+                        <div className="flex gap-2">
+                          <Input
+                            type="number"
+                            value={endHour}
+                            onChange={(e) => setEndHour(e.target.value)}
+                            min="0"
+                            max="23"
+                            placeholder="HH"
+                          />
+                          <Input
+                            type="number"
+                            value={endMinute}
+                            onChange={(e) => setEndMinute(e.target.value)}
+                            min="0"
+                            max="59"
+                            placeholder="MM"
+                          />
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </TabsContent>
-              </Tabs>
-            </>
-          )}
+                  </TabsContent>
+                </Tabs>
+              </>
+            )}
+          </div>
 
           <div className="flex gap-2">
             <Button

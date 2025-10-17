@@ -1,3 +1,4 @@
+import { invoke } from "@tauri-apps/api/core";
 import { Clock, Calendar, Infinity, Trash2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,6 +11,9 @@ import {
   formatTimeRange,
   getDayName,
 } from "@/lib/helpers";
+import { useSettings } from "@/hooks/useSettings";
+import { storage } from "@/lib/storage";
+import { generateId } from "@/lib/helpers";
 
 interface BlockRuleCardProps {
   rule: BlockRule;
@@ -22,7 +26,59 @@ export default function BlockRuleCard({
   onRemove,
   onToggle,
 }: BlockRuleCardProps) {
+  const { settings } = useSettings();
   const active = isRuleActive(rule);
+
+  const handleToggle = async (checked: boolean) => {
+    onToggle(checked);
+
+    // Send webhook notification if enabled
+    if (
+      settings.webhookEnabled &&
+      settings.webhookUrl &&
+      ((checked && settings.sendBlockNotifications) ||
+        (!checked && settings.sendUnblockNotifications))
+    ) {
+      try {
+        const action = checked ? "enabled" : "disabled";
+        const emoji = checked ? "🔒" : "🔓";
+        let message = `${emoji} **Block Rule ${
+          action.charAt(0).toUpperCase() + action.slice(1)
+        }**\n\n**App:** ${rule.appName}\n**Type:** ${rule.type}`;
+
+        if (rule.type === "timer" && rule.duration) {
+          message += `\n**Duration:** ${rule.duration} minutes`;
+        } else if (rule.type === "schedule" && rule.days) {
+          const dayNames = rule.days
+            .map((d) => ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][d])
+            .join(", ");
+          message += `\n**Days:** ${dayNames}\n**Time:** ${
+            rule.startHour || 0
+          }:${String(rule.startMinute || 0).padStart(2, "0")} - ${
+            rule.endHour || 0
+          }:${String(rule.endMinute || 0).padStart(2, "0")}`;
+        }
+
+        await invoke("send_discord_webhook", {
+          webhookUrl: settings.webhookUrl,
+          message,
+        });
+      } catch (error) {
+        console.error("Failed to send webhook:", error);
+      }
+    }
+
+    // Log event
+    storage.addEvent({
+      id: generateId(),
+      type: checked ? "block" : "unblock",
+      target: rule.appName,
+      timestamp: Date.now(),
+      message: `${checked ? "Enabled" : "Disabled"} block rule for ${
+        rule.appName
+      }`,
+    });
+  };
 
   const getRuleDescription = () => {
     if (rule.type === "permanent") {
@@ -96,7 +152,7 @@ export default function BlockRuleCard({
         </div>
 
         <div className="flex items-center gap-3 ml-4 pl-4 border-l border-border">
-          <Switch checked={rule.isActive} onCheckedChange={onToggle} />
+          <Switch checked={rule.isActive} onCheckedChange={handleToggle} />
           <Button variant="ghost" size="icon" onClick={onRemove}>
             <Trash2 className="h-4 w-4 text-destructive" />
           </Button>

@@ -14,8 +14,8 @@ export const storage = {
     if (!stored) {
       return {
         webhookEnabled: false,
-        sendBlockNotifications: false,
-        sendUnblockNotifications: false,
+        sendBlockNotifications: true,
+        sendUnblockNotifications: true,
         sendKillswitchNotifications: true,
         isSetupComplete: false,
         blockingEnabled: false,

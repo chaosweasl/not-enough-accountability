@@ -45,7 +45,7 @@ export default function Settings() {
       setPendingChanges({});
     }
 
-    if (showChangePin && newPin) {
+    if (showChangePin && newPin && confirmNewPin) {
       if (newPin.length < 4) {
         setPinError("PIN must be at least 4 digits");
         return;
@@ -94,6 +94,17 @@ export default function Settings() {
   const handleChangePinClick = () => {
     setShowChangePin(true);
     setShowPinDialog(true);
+  };
+
+  const handlePinDialogClose = (open: boolean) => {
+    setShowPinDialog(open);
+    if (!open) {
+      // Reset PIN change state if dialog is closed without completion
+      if (showChangePin && newPin) {
+        // Don't reset if the user just verified successfully
+        // (in that case, handlePinVerified already reset everything)
+      }
+    }
   };
 
   return (
@@ -196,12 +207,13 @@ export default function Settings() {
                       setConfirmNewPin("");
                       setPinError("");
                     }}
-                    className="flex-1 h-11 border-2 font-semibold"
+                    className="flex-1 h-11 border-2 font-semibold hover:bg-muted hover:text-foreground"
                   >
                     Cancel
                   </Button>
                   <Button
                     onClick={() => setShowPinDialog(true)}
+                    disabled={!newPin || !confirmNewPin}
                     className="flex-1 h-11 shadow-md bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 font-semibold"
                   >
                     Confirm Change
@@ -383,7 +395,7 @@ export default function Settings() {
 
         <PinDialog
           open={showPinDialog}
-          onOpenChange={setShowPinDialog}
+          onOpenChange={handlePinDialogClose}
           onVerified={handlePinVerified}
         />
       </div>
