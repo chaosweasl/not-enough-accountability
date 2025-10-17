@@ -359,6 +359,8 @@ async fn notify_app_closing(webhook_url: Option<String>) -> Result<(), String> {
     Ok(())
 }
 
+
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -378,13 +380,21 @@ pub fn run() {
                 .on_menu_event(move |app, event| {
                     match event.id.as_ref() {
                         "quit" => {
-                            // Emit event to frontend to send quit webhook before exiting
+                            // Emit event to frontend to send webhook
                             if let Some(window) = app.get_webview_window("main") {
+                                // Emit the app-quitting event that App.tsx is listening for
                                 let _ = window.emit("app-quitting", ());
-                                // Give time for webhook to send
-                                std::thread::sleep(std::time::Duration::from_millis(500));
+                                
+                                // Give the frontend time to send the webhook (2 seconds)
+                                let app_clone = app.clone();
+                                std::thread::spawn(move || {
+                                    std::thread::sleep(std::time::Duration::from_secs(2));
+                                    app_clone.exit(0);
+                                });
+                            } else {
+                                // No window, just quit immediately
+                                app.exit(0);
                             }
-                            app.exit(0);
                         }
                         "show" => {
                             if let Some(window) = app.get_webview_window("main") {
@@ -396,12 +406,21 @@ pub fn run() {
                     }
                 })
                 .on_tray_icon_event(|tray, event| {
-                    if let TrayIconEvent::Click { .. } = event {
-                        let app = tray.app_handle();
-                        if let Some(window) = app.get_webview_window("main") {
-                            let _ = window.show();
-                            let _ = window.set_focus();
+                    match event {
+                        // Handle double-click to toggle window
+                        TrayIconEvent::DoubleClick { .. } => {
+                            let app = tray.app_handle();
+                            if let Some(window) = app.get_webview_window("main") {
+                                // Toggle window visibility
+                                if window.is_visible().unwrap_or(false) {
+                                    let _ = window.hide();
+                                } else {
+                                    let _ = window.show();
+                                    let _ = window.set_focus();
+                                }
+                            }
                         }
+                        _ => {}
                     }
                 })
                 .build(app)?;
