@@ -97,270 +97,296 @@ export default function Settings() {
   };
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto">
-      <div className="card-animate">
-        <h2 className="text-3xl font-bold gradient-text">Settings</h2>
-        <p className="text-base text-muted-foreground mt-1.5">
+    <div className="space-y-8">
+      {/* Header */}
+      <div>
+        <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+          Settings
+        </h1>
+        <p className="text-muted-foreground text-lg">
           Configure your accountability preferences
         </p>
       </div>
 
-      {/* PIN Settings */}
-      <Card className="card-animate shadow-modern border-2 hover:shadow-xl transition-shadow duration-300">
-        <CardHeader className="pb-6">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-gradient-to-br from-primary/10 to-accent/10 shadow-md">
-              <Key className="h-6 w-6 text-primary" />
-            </div>
-            <div>
-              <CardTitle className="text-xl font-bold">
-                PIN Protection
-              </CardTitle>
-              <CardDescription className="text-base mt-1.5">
-                Your PIN is required to disable blocking or modify sensitive
-                settings
-              </CardDescription>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <Button
-            onClick={handleChangePinClick}
-            className="shadow-md bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 font-semibold"
-          >
-            <Key className="mr-2 h-4 w-4" />
-            Change PIN
-          </Button>
+      <div className="space-y-6 max-w-4xl">
+        <div className="card-animate">
+          <h2 className="text-3xl font-bold gradient-text">Settings</h2>
+          <p className="text-base text-muted-foreground mt-1.5">
+            Configure your accountability preferences
+          </p>
+        </div>
 
-          {showChangePin && !showPinDialog && (
-            <div className="space-y-4 p-6 border-2 rounded-xl bg-gradient-to-br from-muted/30 to-background shadow-inner">
-              <div className="space-y-2">
-                <Label htmlFor="new-pin" className="text-base font-medium">
-                  New PIN
-                </Label>
-                <Input
-                  id="new-pin"
-                  type="password"
-                  value={newPin}
-                  onChange={(e) => setNewPin(e.target.value)}
-                  placeholder="Enter new PIN"
-                  maxLength={8}
-                  className="h-12 border-2 focus:ring-2 focus:ring-primary/20"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label
-                  htmlFor="confirm-new-pin"
-                  className="text-base font-medium"
-                >
-                  Confirm New PIN
-                </Label>
-                <Input
-                  id="confirm-new-pin"
-                  type="password"
-                  value={confirmNewPin}
-                  onChange={(e) => setConfirmNewPin(e.target.value)}
-                  placeholder="Re-enter new PIN"
-                  maxLength={8}
-                  className="h-12 border-2 focus:ring-2 focus:ring-primary/20"
-                />
-              </div>
-              {pinError && (
-                <div className="rounded-lg p-3.5 bg-destructive/10 border-2 border-destructive/20">
-                  <p className="text-sm text-destructive font-semibold">
-                    ⚠️ {pinError}
-                  </p>
+        {/* PIN Settings */}
+        <Card className="border-2 hover:shadow-xl transition-all duration-300 hover:border-primary/30">
+          <CardHeader className="pb-6">
+            <div className="flex items-center gap-4">
+              <div className="relative">
+                <div className="absolute inset-0 gradient-primary blur-xl opacity-20"></div>
+                <div className="relative p-3 rounded-xl gradient-primary shadow-lg">
+                  <Key className="h-6 w-6 text-white" />
                 </div>
-              )}
-              <div className="flex gap-3 pt-2">
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setShowChangePin(false);
-                    setNewPin("");
-                    setConfirmNewPin("");
-                    setPinError("");
-                  }}
-                  className="flex-1 h-11 border-2 font-semibold"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={() => setShowPinDialog(true)}
-                  className="flex-1 h-11 shadow-md bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 font-semibold"
-                >
-                  Confirm Change
-                </Button>
+              </div>
+              <div>
+                <CardTitle className="text-2xl font-bold">
+                  PIN Protection
+                </CardTitle>
+                <CardDescription className="text-base mt-1">
+                  Your PIN is required to disable blocking or modify sensitive
+                  settings
+                </CardDescription>
               </div>
             </div>
-          )}
-        </CardContent>
-      </Card>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Button
+              onClick={handleChangePinClick}
+              size="lg"
+              className="gradient-primary shadow-lg shadow-primary/25 font-semibold hover:shadow-xl hover:scale-105"
+            >
+              <Key className="mr-2 h-5 w-5" />
+              Change PIN
+            </Button>
 
-      {/* Discord Webhook */}
-      <Card className="card-animate shadow-modern border-2 hover:shadow-xl transition-shadow duration-300">
-        <CardHeader className="pb-6">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-gradient-to-br from-primary/10 to-accent/10 shadow-md">
-              <Webhook className="h-6 w-6 text-primary" />
-            </div>
-            <div>
-              <CardTitle className="text-xl font-bold">
-                Discord Integration
-              </CardTitle>
-              <CardDescription className="text-base mt-1.5">
-                Get notifications in Discord when apps are blocked or unblocked
-              </CardDescription>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-5">
-          <div className="flex items-center justify-between p-5 rounded-xl border-2 bg-gradient-to-br from-muted/20 to-background shadow-sm hover:shadow-md transition-shadow duration-200">
-            <div className="space-y-1">
-              <Label className="text-base font-semibold flex items-center gap-2">
-                Enable Discord Notifications
-                <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium">
-                  PIN Required
-                </span>
-              </Label>
-              <p className="text-sm text-muted-foreground">
-                Requires PIN verification to enable/disable
-              </p>
-            </div>
-            <Switch
-              checked={settings.webhookEnabled}
-              onCheckedChange={handleToggleWebhook}
-              className="scale-125 shadow-md"
-            />
-          </div>
-
-          {settings.webhookEnabled && (
-            <div className="space-y-4 p-5 rounded-xl border-2 bg-gradient-to-br from-muted/10 to-background">
-              <div className="space-y-2">
-                <Label htmlFor="webhook-url" className="text-base font-medium">
-                  Webhook URL
-                </Label>
-                <div className="flex gap-2">
+            {showChangePin && !showPinDialog && (
+              <div className="space-y-4 p-6 border-2 rounded-xl bg-gradient-to-br from-muted/30 to-background shadow-inner">
+                <div className="space-y-2">
+                  <Label htmlFor="new-pin" className="text-base font-medium">
+                    New PIN
+                  </Label>
                   <Input
-                    id="webhook-url"
-                    type="url"
-                    value={webhookUrl}
-                    onChange={(e) => setWebhookUrl(e.target.value)}
-                    placeholder="https://discord.com/api/webhooks/..."
-                    className="h-11 border-2 focus:ring-2 focus:ring-primary/20"
+                    id="new-pin"
+                    type="password"
+                    value={newPin}
+                    onChange={(e) => setNewPin(e.target.value)}
+                    placeholder="Enter new PIN"
+                    maxLength={8}
+                    className="h-12 border-2 focus:ring-2 focus:ring-primary/20"
                   />
-                  <Button
-                    onClick={handleSaveWebhook}
-                    className="shadow-md px-6 font-semibold"
+                </div>
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="confirm-new-pin"
+                    className="text-base font-medium"
                   >
-                    <Save className="h-4 w-4 mr-2" />
-                    Save
+                    Confirm New PIN
+                  </Label>
+                  <Input
+                    id="confirm-new-pin"
+                    type="password"
+                    value={confirmNewPin}
+                    onChange={(e) => setConfirmNewPin(e.target.value)}
+                    placeholder="Re-enter new PIN"
+                    maxLength={8}
+                    className="h-12 border-2 focus:ring-2 focus:ring-primary/20"
+                  />
+                </div>
+                {pinError && (
+                  <div className="rounded-lg p-3.5 bg-destructive/10 border-2 border-destructive/20">
+                    <p className="text-sm text-destructive font-semibold">
+                      ⚠️ {pinError}
+                    </p>
+                  </div>
+                )}
+                <div className="flex gap-3 pt-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setShowChangePin(false);
+                      setNewPin("");
+                      setConfirmNewPin("");
+                      setPinError("");
+                    }}
+                    className="flex-1 h-11 border-2 font-semibold"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={() => setShowPinDialog(true)}
+                    className="flex-1 h-11 shadow-md bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 font-semibold"
+                  >
+                    Confirm Change
                   </Button>
                 </div>
               </div>
+            )}
+          </CardContent>
+        </Card>
 
-              <Button
-                variant="outline"
-                onClick={handleTestWebhook}
-                disabled={testingWebhook}
-                className="border-2 font-semibold w-full h-11"
-              >
-                {testingWebhook ? "Testing..." : "Test Webhook"}
-              </Button>
-
-              {webhookTestResult && (
-                <div
-                  className={`rounded-lg p-4 border-2 shadow-sm ${
-                    webhookTestResult.startsWith("✅")
-                      ? "bg-green-500/10 border-green-500/30"
-                      : "bg-destructive/10 border-destructive/30"
-                  }`}
-                >
-                  <p className="text-sm font-semibold">{webhookTestResult}</p>
+        {/* Discord Webhook */}
+        <Card className="border-2 hover:shadow-xl transition-all duration-300 hover:border-primary/30">
+          <CardHeader className="pb-6">
+            <div className="flex items-center gap-4">
+              <div className="relative">
+                <div className="absolute inset-0 gradient-primary blur-xl opacity-20"></div>
+                <div className="relative p-3 rounded-xl gradient-primary shadow-lg">
+                  <Webhook className="h-6 w-6 text-white" />
                 </div>
-              )}
+              </div>
+              <div>
+                <CardTitle className="text-2xl font-bold">
+                  Discord Integration
+                </CardTitle>
+                <CardDescription className="text-base mt-1">
+                  Get notifications in Discord when apps are blocked or
+                  unblocked
+                </CardDescription>
+              </div>
             </div>
-          )}
-        </CardContent>
-      </Card>
+          </CardHeader>
+          <CardContent className="space-y-5">
+            <div className="flex items-center justify-between p-5 rounded-xl border-2 bg-gradient-to-br from-muted/20 to-background shadow-sm hover:shadow-md transition-shadow duration-200">
+              <div className="space-y-1">
+                <Label className="text-base font-semibold flex items-center gap-2">
+                  Enable Discord Notifications
+                  <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium">
+                    PIN Required
+                  </span>
+                </Label>
+                <p className="text-sm text-muted-foreground">
+                  Requires PIN verification to enable/disable
+                </p>
+              </div>
+              <Switch
+                checked={settings.webhookEnabled}
+                onCheckedChange={handleToggleWebhook}
+                className="scale-125 shadow-md"
+              />
+            </div>
 
-      {/* Notification Preferences */}
-      <Card className="card-animate shadow-modern border-2 hover:shadow-xl transition-shadow duration-300">
-        <CardHeader className="pb-6">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-gradient-to-br from-primary/10 to-accent/10 shadow-md">
-              <Bell className="h-6 w-6 text-primary" />
-            </div>
-            <div>
-              <CardTitle className="text-xl font-bold">
-                Notification Preferences
-              </CardTitle>
-              <CardDescription className="text-base mt-1.5">
-                Choose what events trigger Discord notifications
-              </CardDescription>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="flex items-center justify-between p-5 rounded-xl border-2 bg-gradient-to-br from-muted/20 to-background shadow-sm hover:shadow-md transition-all duration-200">
-            <div className="space-y-1">
-              <Label className="text-base font-semibold">
-                Block Notifications
-              </Label>
-              <p className="text-sm text-muted-foreground">
-                Get notified when apps are blocked
-              </p>
-            </div>
-            <Switch
-              checked={settings.sendBlockNotifications}
-              onCheckedChange={(checked) =>
-                updateSettings({ sendBlockNotifications: checked })
-              }
-              className="scale-125 shadow-md"
-            />
-          </div>
-          <div className="flex items-center justify-between p-5 rounded-xl border-2 bg-gradient-to-br from-muted/20 to-background shadow-sm hover:shadow-md transition-all duration-200">
-            <div className="space-y-1">
-              <Label className="text-base font-semibold">
-                Unblock Notifications
-              </Label>
-              <p className="text-sm text-muted-foreground">
-                Get notified when apps are unblocked
-              </p>
-            </div>
-            <Switch
-              checked={settings.sendUnblockNotifications}
-              onCheckedChange={(checked) =>
-                updateSettings({ sendUnblockNotifications: checked })
-              }
-              className="scale-125 shadow-md"
-            />
-          </div>
-          <div className="flex items-center justify-between p-5 rounded-xl border-2 bg-gradient-to-br from-muted/20 to-background shadow-sm hover:shadow-md transition-all duration-200">
-            <div className="space-y-1">
-              <Label className="text-base font-semibold">
-                Killswitch Notifications
-              </Label>
-              <p className="text-sm text-muted-foreground">
-                Get notified when the emergency killswitch is activated
-              </p>
-            </div>
-            <Switch
-              checked={settings.sendKillswitchNotifications}
-              onCheckedChange={(checked) =>
-                updateSettings({ sendKillswitchNotifications: checked })
-              }
-              className="scale-125 shadow-md"
-            />
-          </div>
-        </CardContent>
-      </Card>
+            {settings.webhookEnabled && (
+              <div className="space-y-4 p-5 rounded-xl border-2 bg-gradient-to-br from-muted/10 to-background">
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="webhook-url"
+                    className="text-base font-medium"
+                  >
+                    Webhook URL
+                  </Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="webhook-url"
+                      type="url"
+                      value={webhookUrl}
+                      onChange={(e) => setWebhookUrl(e.target.value)}
+                      placeholder="https://discord.com/api/webhooks/..."
+                      className="h-11 border-2 focus:ring-2 focus:ring-primary/20"
+                    />
+                    <Button
+                      onClick={handleSaveWebhook}
+                      className="shadow-md px-6 font-semibold"
+                    >
+                      <Save className="h-4 w-4 mr-2" />
+                      Save
+                    </Button>
+                  </div>
+                </div>
 
-      <PinDialog
-        open={showPinDialog}
-        onOpenChange={setShowPinDialog}
-        onVerified={handlePinVerified}
-      />
+                <Button
+                  variant="outline"
+                  onClick={handleTestWebhook}
+                  disabled={testingWebhook}
+                  className="border-2 font-semibold w-full h-11"
+                >
+                  {testingWebhook ? "Testing..." : "Test Webhook"}
+                </Button>
+
+                {webhookTestResult && (
+                  <div
+                    className={`rounded-lg p-4 border-2 shadow-sm ${
+                      webhookTestResult.startsWith("✅")
+                        ? "bg-green-500/10 border-green-500/30"
+                        : "bg-destructive/10 border-destructive/30"
+                    }`}
+                  >
+                    <p className="text-sm font-semibold">{webhookTestResult}</p>
+                  </div>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Notification Preferences */}
+        <Card className="border-2 hover:shadow-xl transition-all duration-300 hover:border-primary/30">
+          <CardHeader className="pb-6">
+            <div className="flex items-center gap-4">
+              <div className="relative">
+                <div className="absolute inset-0 gradient-primary blur-xl opacity-20"></div>
+                <div className="relative p-3 rounded-xl gradient-primary shadow-lg">
+                  <Bell className="h-6 w-6 text-white" />
+                </div>
+              </div>
+              <div>
+                <CardTitle className="text-2xl font-bold">
+                  Notification Preferences
+                </CardTitle>
+                <CardDescription className="text-base mt-1">
+                  Choose what events trigger Discord notifications
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex items-center justify-between p-5 rounded-xl border-2 bg-gradient-to-br from-muted/20 to-background shadow-sm hover:shadow-md transition-all duration-200">
+              <div className="space-y-1">
+                <Label className="text-base font-semibold">
+                  Block Notifications
+                </Label>
+                <p className="text-sm text-muted-foreground">
+                  Get notified when apps are blocked
+                </p>
+              </div>
+              <Switch
+                checked={settings.sendBlockNotifications}
+                onCheckedChange={(checked) =>
+                  updateSettings({ sendBlockNotifications: checked })
+                }
+                className="scale-125 shadow-md"
+              />
+            </div>
+            <div className="flex items-center justify-between p-5 rounded-xl border-2 bg-gradient-to-br from-muted/20 to-background shadow-sm hover:shadow-md transition-all duration-200">
+              <div className="space-y-1">
+                <Label className="text-base font-semibold">
+                  Unblock Notifications
+                </Label>
+                <p className="text-sm text-muted-foreground">
+                  Get notified when apps are unblocked
+                </p>
+              </div>
+              <Switch
+                checked={settings.sendUnblockNotifications}
+                onCheckedChange={(checked) =>
+                  updateSettings({ sendUnblockNotifications: checked })
+                }
+                className="scale-125 shadow-md"
+              />
+            </div>
+            <div className="flex items-center justify-between p-5 rounded-xl border-2 bg-gradient-to-br from-muted/20 to-background shadow-sm hover:shadow-md transition-all duration-200">
+              <div className="space-y-1">
+                <Label className="text-base font-semibold">
+                  Killswitch Notifications
+                </Label>
+                <p className="text-sm text-muted-foreground">
+                  Get notified when the emergency killswitch is activated
+                </p>
+              </div>
+              <Switch
+                checked={settings.sendKillswitchNotifications}
+                onCheckedChange={(checked) =>
+                  updateSettings({ sendKillswitchNotifications: checked })
+                }
+                className="scale-125 shadow-md"
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        <PinDialog
+          open={showPinDialog}
+          onOpenChange={setShowPinDialog}
+          onVerified={handlePinVerified}
+        />
+      </div>
     </div>
   );
 }

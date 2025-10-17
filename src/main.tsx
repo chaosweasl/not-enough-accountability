@@ -1,12 +1,22 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
-import { ThemeProvider } from "./components/ThemeProvider";
+import { Theme, ThemePanel } from "@radix-ui/themes";
+import "@radix-ui/themes/styles.css";
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
-    <ThemeProvider defaultTheme="system" storageKey="neu-theme">
+    <Theme
+      appearance="dark"
+      accentColor="iris"
+      grayColor="slate"
+      radius="medium"
+      scaling="100%"
+      panelBackground="solid"
+    >
       <App />
-    </ThemeProvider>
+      {/* Theme customization panel - remove in production */}
+      <ThemePanel defaultOpen={false} />
+    </Theme>
   </React.StrictMode>
 );
