@@ -12,7 +12,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { useSettings } from "@/hooks/useSettings";
-import { useBlocker } from "@/hooks/useBlocker";
+import { useBlockerContext } from "@/contexts/BlockerContext";
 import { isRuleActive } from "@/lib/helpers";
 import BlockRuleDialog from "./BlockRuleDialog";
 import PinDialog from "./PinDialog";
@@ -21,7 +21,7 @@ import BlockRuleCard from "./BlockRuleCard";
 
 export default function Dashboard() {
   const { settings, updateSettings } = useSettings();
-  const { rules, setIsEnforcing, removeRule, updateRule } = useBlocker();
+  const { rules, setIsEnforcing, removeRule, updateRule } = useBlockerContext();
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showPinDialog, setShowPinDialog] = useState(false);
   const [showKillswitch, setShowKillswitch] = useState(false);

@@ -2,7 +2,8 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use sysinfo::{ProcessRefreshKind, System, ProcessesToUpdate};
-use tauri::{State, Manager, Emitter};
+use tauri::{State, Manager, Emitter, menu::{Menu, MenuItem}};
+use tauri::tray::{TrayIconBuilder, TrayIconEvent};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AppInfo {
@@ -363,18 +364,58 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_notification::init())
         .manage(BlockedApps(Arc::new(Mutex::new(HashMap::new()))))
         .setup(|app| {
+            // Create system tray
+            let quit = MenuItem::with_id(app, "quit", "Quit NEU", true, None::<&str>)?;
+            let show = MenuItem::with_id(app, "show", "Show Window", true, None::<&str>)?;
+            let menu = Menu::with_items(app, &[&show, &quit])?;
+
+            let _tray = TrayIconBuilder::new()
+                .menu(&menu)
+                .icon(app.default_window_icon().unwrap().clone())
+                .on_menu_event(move |app, event| {
+                    match event.id.as_ref() {
+                        "quit" => {
+                            // Emit event to frontend to send quit webhook before exiting
+                            if let Some(window) = app.get_webview_window("main") {
+                                let _ = window.emit("app-quitting", ());
+                                // Give time for webhook to send
+                                std::thread::sleep(std::time::Duration::from_millis(500));
+                            }
+                            app.exit(0);
+                        }
+                        "show" => {
+                            if let Some(window) = app.get_webview_window("main") {
+                                let _ = window.show();
+                                let _ = window.set_focus();
+                            }
+                        }
+                        _ => {}
+                    }
+                })
+                .on_tray_icon_event(|tray, event| {
+                    if let TrayIconEvent::Click { .. } = event {
+                        let app = tray.app_handle();
+                        if let Some(window) = app.get_webview_window("main") {
+                            let _ = window.show();
+                            let _ = window.set_focus();
+                        }
+                    }
+                })
+                .build(app)?;
+
             // Handle window close event (minimize to tray instead of quitting)
             if let Some(window) = app.get_webview_window("main") {
                 let window_clone = window.clone();
                 window.on_window_event(move |event| {
-                    if let tauri::WindowEvent::CloseRequested { .. } = event {
-                        // Don't prevent close for now - just emit event
-                        // Later can add: api.prevent_close(); and window_clone.hide();
+                    if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                        // Prevent default close behavior
+                        api.prevent_close();
                         
-                        // Emit event to frontend to send webhook
-                        let _ = window_clone.emit("app-closing", ());
+                        // Hide window instead of closing (no webhook on minimize)
+                        let _ = window_clone.hide();
                     }
                 });
             }

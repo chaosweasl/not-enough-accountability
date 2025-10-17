@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useBlocker } from "@/hooks/useBlocker";
+import { useBlockerContext } from "@/contexts/BlockerContext";
 import { useSettings } from "@/hooks/useSettings";
 import { AppInfo, BlockRule } from "@/types";
 import { generateId } from "@/lib/helpers";
@@ -27,7 +27,7 @@ export default function BlockRuleDialog({
   open,
   onOpenChange,
 }: BlockRuleDialogProps) {
-  const { addRule } = useBlocker();
+  const { addRule } = useBlockerContext();
   const { settings } = useSettings();
   const [apps, setApps] = useState<AppInfo[]>([]);
   const [loading, setLoading] = useState(false);
