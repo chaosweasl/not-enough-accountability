@@ -110,7 +110,7 @@ export default function About() {
 
               <div className="flex gap-4 p-5 rounded-xl bg-gradient-to-br from-accent/5 to-transparent border-2 border-accent/10 hover:border-accent/20 transition-all duration-300 hover:shadow-md">
                 <div className="p-2.5 rounded-xl bg-gradient-to-br from-accent/10 to-primary/10 h-fit shadow-sm">
-                  <Calendar className="h-6 w-6 text-accent" />
+                  <Calendar className="h-6 w-6 text-primary" />
                 </div>
                 <div>
                   <h3 className="font-bold text-base mb-1">
@@ -137,7 +137,7 @@ export default function About() {
 
               <div className="flex gap-4 p-5 rounded-xl bg-gradient-to-br from-accent/5 to-transparent border-2 border-accent/10 hover:border-accent/20 transition-all duration-300 hover:shadow-md">
                 <div className="p-2.5 rounded-xl bg-gradient-to-br from-accent/10 to-primary/10 h-fit shadow-sm">
-                  <Webhook className="h-6 w-6 text-accent" />
+                  <Webhook className="h-6 w-6 text-primary" />
                 </div>
                 <div>
                   <h3 className="font-bold text-base mb-1">
@@ -207,7 +207,7 @@ export default function About() {
             </div>
             <div className="flex items-start gap-4 p-4 rounded-xl bg-gradient-to-br from-accent/5 to-transparent border-2 border-accent/10 hover:border-accent/20 transition-all duration-300">
               <div className="p-2.5 rounded-xl bg-gradient-to-br from-accent/10 to-primary/10 shadow-sm">
-                <Webhook className="h-5 w-5 text-accent" />
+                <Webhook className="h-5 w-5 text-primary" />
               </div>
               <p className="text-sm leading-relaxed">
                 <strong className="font-bold">

@@ -207,8 +207,8 @@ export default function SetupWizard() {
           {/* Step 3: Complete */}
           {step === 3 && (
             <div className="space-y-4">
-              <div className="flex items-center gap-2 text-sm font-medium text-green-600 dark:text-green-400">
-                <div className="p-1.5 rounded-lg bg-green-500/10">
+              <div className="flex items-center gap-2 text-sm font-medium text-success">
+                <div className="p-1.5 rounded-lg bg-success/10">
                   <CheckCircle className="h-4 w-4" />
                 </div>
                 <span>Step 3 of 3: You're all set!</span>

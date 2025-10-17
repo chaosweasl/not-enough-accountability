@@ -139,22 +139,20 @@ export default function Dashboard() {
             <div className="flex items-center gap-3">
               <div
                 className={`p-2 rounded-lg ${
-                  settings.blockingEnabled
-                    ? "bg-green-100 dark:bg-green-900"
-                    : "bg-gray-100 dark:bg-gray-800"
+                  settings.blockingEnabled ? "bg-success/10" : "bg-muted"
                 }`}
               >
                 {settings.blockingEnabled ? (
-                  <Power className="h-5 w-5 text-green-600 dark:text-green-400" />
+                  <Power className="h-5 w-5 text-success" />
                 ) : (
-                  <PowerOff className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+                  <PowerOff className="h-5 w-5 text-muted-foreground" />
                 )}
               </div>
               <div>
                 <CardTitle className="text-lg">Blocking Status</CardTitle>
                 <CardDescription>
                   {settings.blockingEnabled ? (
-                    <span className="text-green-600 dark:text-green-400">
+                    <span className="text-success">
                       Active • {activeRulesCount} rule
                       {activeRulesCount !== 1 ? "s" : ""} enforced
                     </span>

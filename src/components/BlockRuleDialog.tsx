@@ -198,253 +198,278 @@ export default function BlockRuleDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden flex flex-col border-2">
-        <DialogHeader className="space-y-3 pb-2">
-          <DialogTitle className="text-2xl font-bold">
+      <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden flex flex-col p-0">
+        <DialogHeader className="px-8 pt-8 pb-6 border-b">
+          <DialogTitle className="text-3xl font-bold">
             Add Block Rule
           </DialogTitle>
-          <DialogDescription className="text-base">
+          <DialogDescription className="text-base mt-2">
             Select an application and configure when it should be blocked
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-8 overflow-y-auto flex-1 pr-2 py-2">
-          {/* App Selection */}
-          <div className="space-y-4">
-            <Label className="text-lg font-semibold">Select Application</Label>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-              <Input
-                placeholder="Search apps (running or installed)..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 h-12 text-base border-2"
-              />
+        <div className="flex-1 overflow-y-auto px-8 py-6">
+          <div className="space-y-10">
+            {/* App Selection */}
+            <div className="space-y-5">
+              <Label className="text-xl font-semibold">
+                Select Application
+              </Label>
+              <div className="relative">
+                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                <Input
+                  placeholder="Search apps (running or installed)..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-12 h-14 text-base"
+                />
+              </div>
+
+              {loading ? (
+                <div className="flex items-center justify-center py-16 rounded-xl bg-muted/30">
+                  <p className="text-base text-muted-foreground">
+                    Loading applications...
+                  </p>
+                </div>
+              ) : (
+                <div className="rounded-xl max-h-96 overflow-y-auto bg-card border shadow-sm">
+                  {filteredApps.length === 0 ? (
+                    <div className="p-16 text-center">
+                      <p className="text-base text-muted-foreground font-medium">
+                        No applications found
+                      </p>
+                      <p className="text-sm text-muted-foreground mt-2">
+                        Try searching for a different term
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="divide-y divide-border">
+                      {filteredApps.slice(0, 50).map((app) => (
+                        <button
+                          key={`${app.name}-${app.path}`}
+                          onClick={() => setSelectedApp(app)}
+                          className={`w-full px-6 py-5 text-left hover:bg-accent/50 transition-all duration-200 ${
+                            selectedApp?.path === app.path
+                              ? "bg-primary/10 border-l-4 border-primary"
+                              : "border-l-4 border-transparent"
+                          }`}
+                        >
+                          <p className="font-semibold text-base mb-2">
+                            {app.name}
+                          </p>
+                          <p className="text-sm text-muted-foreground truncate">
+                            {app.path}
+                          </p>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
-            {loading ? (
-              <div className="flex items-center justify-center py-12 border-2 rounded-lg bg-muted/30">
-                <p className="text-base text-muted-foreground">
-                  Loading applications...
-                </p>
+            {/* Selected App and Rule Configuration */}
+            {selectedApp ? (
+              <div className="space-y-8 animate-in fade-in-50 duration-300">
+                <div className="rounded-xl border-2 border-primary/20 bg-primary/5 p-8">
+                  <p className="text-xs font-bold text-muted-foreground mb-3 tracking-wide">
+                    SELECTED APPLICATION
+                  </p>
+                  <p className="text-lg font-bold mb-2">{selectedApp.name}</p>
+                  <p className="text-sm text-muted-foreground truncate">
+                    {selectedApp.path}
+                  </p>
+                </div>
+
+                {/* Rule Type */}
+                <div className="space-y-5">
+                  <Label className="text-xl font-semibold">Block Type</Label>
+                  <Tabs
+                    value={ruleType}
+                    onValueChange={(v) => setRuleType(v as any)}
+                  >
+                    <TabsList className="grid w-full grid-cols-3 h-14 p-1">
+                      <TabsTrigger
+                        value="permanent"
+                        className="text-base font-semibold"
+                      >
+                        Permanent
+                      </TabsTrigger>
+                      <TabsTrigger
+                        value="timer"
+                        className="text-base font-semibold"
+                      >
+                        Timer
+                      </TabsTrigger>
+                      <TabsTrigger
+                        value="schedule"
+                        className="text-base font-semibold"
+                      >
+                        Schedule
+                      </TabsTrigger>
+                    </TabsList>
+
+                    <TabsContent
+                      value="permanent"
+                      className="mt-8 min-h-[180px]"
+                    >
+                      <div className="rounded-xl bg-muted/50 p-8 border">
+                        <p className="text-lg text-foreground">
+                          🔒 Block this app permanently until manually removed
+                        </p>
+                      </div>
+                    </TabsContent>
+
+                    <TabsContent value="timer" className="mt-8 min-h-[180px]">
+                      <div className="space-y-5">
+                        <Label
+                          htmlFor="duration"
+                          className="text-base font-medium"
+                        >
+                          Duration (minutes)
+                        </Label>
+                        <Input
+                          id="duration"
+                          type="number"
+                          value={duration}
+                          onChange={(e) => setDuration(e.target.value)}
+                          min="1"
+                          max="1440"
+                          className="text-2xl font-bold h-16 text-center"
+                        />
+                        <p className="text-base text-muted-foreground">
+                          ⏱️ Block will automatically expire after this time
+                        </p>
+                      </div>
+                    </TabsContent>
+
+                    <TabsContent
+                      value="schedule"
+                      className="mt-8 min-h-[180px]"
+                    >
+                      <div className="space-y-8">
+                        <div className="space-y-4">
+                          <Label className="text-base font-medium">
+                            Days of the Week
+                          </Label>
+                          <div className="flex gap-3">
+                            {["S", "M", "T", "W", "T", "F", "S"].map(
+                              (day, idx) => (
+                                <Button
+                                  key={idx}
+                                  type="button"
+                                  variant={
+                                    days.includes(idx) ? "default" : "outline"
+                                  }
+                                  size="lg"
+                                  className="flex-1 h-14 text-lg font-bold"
+                                  onClick={() => toggleDay(idx)}
+                                >
+                                  {day}
+                                </Button>
+                              )
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-8">
+                          <div className="space-y-4">
+                            <Label className="text-base font-medium">
+                              Start Time
+                            </Label>
+                            <div className="flex gap-3 items-center">
+                              <Input
+                                type="number"
+                                value={startHour}
+                                onChange={(e) => setStartHour(e.target.value)}
+                                min="0"
+                                max="23"
+                                placeholder="HH"
+                                className="text-center font-mono text-xl h-14"
+                              />
+                              <span className="text-3xl font-bold text-muted-foreground">
+                                :
+                              </span>
+                              <Input
+                                type="number"
+                                value={startMinute}
+                                onChange={(e) => setStartMinute(e.target.value)}
+                                min="0"
+                                max="59"
+                                placeholder="MM"
+                                className="text-center font-mono text-xl h-14"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="space-y-4">
+                            <Label className="text-base font-medium">
+                              End Time
+                            </Label>
+                            <div className="flex gap-3 items-center">
+                              <Input
+                                type="number"
+                                value={endHour}
+                                onChange={(e) => setEndHour(e.target.value)}
+                                min="0"
+                                max="23"
+                                placeholder="HH"
+                                className="text-center font-mono text-xl h-14"
+                              />
+                              <span className="text-3xl font-bold text-muted-foreground">
+                                :
+                              </span>
+                              <Input
+                                type="number"
+                                value={endMinute}
+                                onChange={(e) => setEndMinute(e.target.value)}
+                                min="0"
+                                max="59"
+                                placeholder="MM"
+                                className="text-center font-mono text-xl h-14"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                        <p className="text-base text-muted-foreground">
+                          📅 Block will be active during the specified time on
+                          selected days
+                        </p>
+                      </div>
+                    </TabsContent>
+                  </Tabs>
+                </div>
               </div>
             ) : (
-              <div className="border-2 rounded-lg max-h-72 overflow-y-auto bg-background">
-                {filteredApps.length === 0 ? (
-                  <div className="p-12 text-center">
-                    <p className="text-base text-muted-foreground">
-                      No applications found
-                    </p>
-                    <p className="text-sm text-muted-foreground mt-2">
-                      Try searching for a different term
-                    </p>
-                  </div>
-                ) : (
-                  <div className="divide-y divide-border">
-                    {filteredApps.slice(0, 50).map((app) => (
-                      <button
-                        key={`${app.name}-${app.path}`}
-                        onClick={() => setSelectedApp(app)}
-                        className={`w-full p-5 text-left hover:bg-accent/50 transition-all duration-200 ${
-                          selectedApp?.path === app.path
-                            ? "bg-primary/10 border-l-4 border-primary"
-                            : "border-l-4 border-transparent"
-                        }`}
-                      >
-                        <p className="font-medium text-base mb-1.5">
-                          {app.name}
-                        </p>
-                        <p className="text-sm text-muted-foreground truncate">
-                          {app.path}
-                        </p>
-                      </button>
-                    ))}
-                  </div>
-                )}
+              <div className="rounded-xl border-2 border-dashed border-muted-foreground/25 bg-muted/20 p-20 text-center min-h-[400px] flex items-center justify-center">
+                <div>
+                  <p className="text-lg text-muted-foreground font-semibold">
+                    No application selected
+                  </p>
+                  <p className="text-base text-muted-foreground mt-3">
+                    Search and select an app from the list above
+                  </p>
+                </div>
               </div>
             )}
           </div>
-
-          {/* Selected App and Rule Configuration */}
-          {selectedApp ? (
-            <div className="space-y-6 animate-in fade-in-50 duration-300">
-              <div className="rounded-lg border-2 border-primary/30 bg-primary/5 p-5">
-                <p className="text-xs font-semibold text-muted-foreground mb-2">
-                  SELECTED APP
-                </p>
-                <p className="text-base font-bold">{selectedApp.name}</p>
-                <p className="text-sm text-muted-foreground truncate mt-1.5">
-                  {selectedApp.path}
-                </p>
-              </div>
-
-              {/* Rule Type */}
-              <div className="space-y-4">
-                <Label className="text-lg font-semibold">Block Type</Label>
-                <Tabs
-                  value={ruleType}
-                  onValueChange={(v) => setRuleType(v as any)}
-                >
-                  <TabsList className="grid w-full grid-cols-3 h-12">
-                    <TabsTrigger value="permanent" className="text-base">
-                      Permanent
-                    </TabsTrigger>
-                    <TabsTrigger value="timer" className="text-base">
-                      Timer
-                    </TabsTrigger>
-                    <TabsTrigger value="schedule" className="text-base">
-                      Schedule
-                    </TabsTrigger>
-                  </TabsList>
-
-                  <TabsContent
-                    value="permanent"
-                    className="space-y-2 mt-6 min-h-[140px]"
-                  >
-                    <div className="rounded-lg border-2 bg-muted/50 p-6">
-                      <p className="text-base text-muted-foreground">
-                        🔒 Block this app permanently until manually removed
-                      </p>
-                    </div>
-                  </TabsContent>
-
-                  <TabsContent
-                    value="timer"
-                    className="space-y-3 mt-6 min-h-[140px]"
-                  >
-                    <div className="space-y-3">
-                      <Label htmlFor="duration" className="text-base">
-                        Duration (minutes)
-                      </Label>
-                      <Input
-                        id="duration"
-                        type="number"
-                        value={duration}
-                        onChange={(e) => setDuration(e.target.value)}
-                        min="1"
-                        max="1440"
-                        className="text-xl font-semibold h-14 border-2"
-                      />
-                      <p className="text-sm text-muted-foreground">
-                        ⏱️ Block will automatically expire after this time
-                      </p>
-                    </div>
-                  </TabsContent>
-
-                  <TabsContent
-                    value="schedule"
-                    className="space-y-5 mt-6 min-h-[140px]"
-                  >
-                    <div className="space-y-3">
-                      <Label className="text-base">Days of the Week</Label>
-                      <div className="flex gap-2">
-                        {["S", "M", "T", "W", "T", "F", "S"].map((day, idx) => (
-                          <Button
-                            key={idx}
-                            type="button"
-                            variant={days.includes(idx) ? "default" : "outline"}
-                            size="sm"
-                            className="flex-1 transition-all h-11 text-base font-semibold"
-                            onClick={() => toggleDay(idx)}
-                          >
-                            {day}
-                          </Button>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-5">
-                      <div className="space-y-3">
-                        <Label className="text-base">Start Time</Label>
-                        <div className="flex gap-2 items-center">
-                          <Input
-                            type="number"
-                            value={startHour}
-                            onChange={(e) => setStartHour(e.target.value)}
-                            min="0"
-                            max="23"
-                            placeholder="HH"
-                            className="text-center font-mono text-lg h-12 border-2"
-                          />
-                          <span className="text-2xl font-bold text-muted-foreground">
-                            :
-                          </span>
-                          <Input
-                            type="number"
-                            value={startMinute}
-                            onChange={(e) => setStartMinute(e.target.value)}
-                            min="0"
-                            max="59"
-                            placeholder="MM"
-                            className="text-center font-mono text-lg h-12 border-2"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="space-y-3">
-                        <Label className="text-base">End Time</Label>
-                        <div className="flex gap-2 items-center">
-                          <Input
-                            type="number"
-                            value={endHour}
-                            onChange={(e) => setEndHour(e.target.value)}
-                            min="0"
-                            max="23"
-                            placeholder="HH"
-                            className="text-center font-mono text-lg h-12 border-2"
-                          />
-                          <span className="text-2xl font-bold text-muted-foreground">
-                            :
-                          </span>
-                          <Input
-                            type="number"
-                            value={endMinute}
-                            onChange={(e) => setEndMinute(e.target.value)}
-                            min="0"
-                            max="59"
-                            placeholder="MM"
-                            className="text-center font-mono text-lg h-12 border-2"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      📅 Block will be active during the specified time on
-                      selected days
-                    </p>
-                  </TabsContent>
-                </Tabs>
-              </div>
-            </div>
-          ) : (
-            <div className="rounded-lg border-2 border-dashed border-muted-foreground/25 bg-muted/20 p-12 text-center min-h-[350px] flex items-center justify-center">
-              <div>
-                <p className="text-base text-muted-foreground font-medium">
-                  No application selected
-                </p>
-                <p className="text-sm text-muted-foreground mt-2">
-                  Search and select an app from the list above
-                </p>
-              </div>
-            </div>
-          )}
         </div>
 
-        <div className="flex gap-3 pt-6 border-t-2 mt-2">
+        <div className="flex gap-4 px-8 py-6 border-t bg-muted/30">
           <Button
             variant="outline"
             onClick={() => {
               resetDialog();
               onOpenChange(false);
             }}
-            className="flex-1 h-12 text-base font-semibold"
+            className="flex-1 h-14 text-base font-semibold"
           >
             Cancel
           </Button>
           <Button
             onClick={handleAddRule}
             disabled={!selectedApp}
-            className="flex-1 h-12 text-base font-semibold"
+            className="flex-1 h-14 text-base font-semibold"
           >
             Add Block Rule
           </Button>

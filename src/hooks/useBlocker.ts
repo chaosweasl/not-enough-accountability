@@ -18,7 +18,7 @@ export function useBlocker() {
     // Load initial rules
     loadRules();
 
-    // Listen for storage changes (e.g., from other tabs or components)
+    // Listen for storage changes from other tabs/windows
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === "neu_block_rules") {
         loadRules();
@@ -26,7 +26,10 @@ export function useBlocker() {
     };
 
     window.addEventListener("storage", handleStorageChange);
-    return () => window.removeEventListener("storage", handleStorageChange);
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+    };
   }, []);
 
   const setRules = useCallback(

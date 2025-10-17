@@ -2,7 +2,7 @@
 
 @import "tailwindcss";
 
-/* Import Radix UI Colors */
+/* Import Radix UI Colors - Light and Dark variants */
 @import "@radix-ui/colors/slate.css";
 @import "@radix-ui/colors/slate-dark.css";
 @import "@radix-ui/colors/violet.css";
@@ -28,19 +28,15 @@
   --color-secondary-foreground: var(--slate-12);
   --color-muted: var(--slate-3);
   --color-muted-foreground: var(--slate-11);
-  --color-accent: var(--violet-9);
-  --color-accent-foreground: var(--slate-1);
+  --color-accent: var(--violet-4);
+  --color-accent-foreground: var(--slate-12);
   --color-destructive: var(--red-9);
   --color-destructive-foreground: var(--slate-1);
   --color-border: var(--slate-6);
-  --color-input: var(--slate-3);
-  --color-ring: var(--violet-9);
+  --color-input: var(--slate-7);
+  --color-ring: var(--violet-8);
   --color-success: var(--green-9);
   --color-warning: var(--amber-9);
-  --color-mention: var(--violet-9);
-  --color-online: var(--green-9);
-  --color-idle: var(--amber-9);
-  --color-dnd: var(--red-9);
   --radius-lg: 0.5rem;
   --radius-md: calc(var(--radius-lg) - 2px);
   --radius-sm: calc(var(--radius-lg) - 4px);
@@ -60,48 +56,40 @@
   --color-secondary-foreground: var(--slate-12);
   --color-muted: var(--slate-3);
   --color-muted-foreground: var(--slate-11);
-  --color-accent: var(--violet-9);
-  --color-accent-foreground: var(--slate-1);
+  --color-accent: var(--violet-4);
+  --color-accent-foreground: var(--slate-12);
   --color-destructive: var(--red-9);
   --color-destructive-foreground: var(--slate-1);
   --color-border: var(--slate-6);
-  --color-input: var(--slate-3);
-  --color-ring: var(--violet-9);
+  --color-input: var(--slate-7);
+  --color-ring: var(--violet-8);
   --color-success: var(--green-9);
   --color-warning: var(--amber-9);
-  --color-mention: var(--violet-9);
-  --color-online: var(--green-9);
-  --color-idle: var(--amber-9);
-  --color-dnd: var(--red-9);
 }
 
 .light {
-  /* Radix UI Light Theme */
-  --color-background: var(--slate-1);
+  /* Radix UI Light Theme - Proper colors for light mode */
+  --color-background: white;
   --color-foreground: var(--slate-12);
-  --color-card: var(--slate-2);
+  --color-card: white;
   --color-card-foreground: var(--slate-12);
-  --color-popover: var(--slate-1);
+  --color-popover: white;
   --color-popover-foreground: var(--slate-12);
   --color-primary: var(--violet-9);
-  --color-primary-foreground: var(--slate-1);
+  --color-primary-foreground: white;
   --color-secondary: var(--slate-3);
   --color-secondary-foreground: var(--slate-12);
   --color-muted: var(--slate-3);
   --color-muted-foreground: var(--slate-11);
-  --color-accent: var(--violet-9);
-  --color-accent-foreground: var(--slate-1);
+  --color-accent: var(--violet-4);
+  --color-accent-foreground: var(--slate-12);
   --color-destructive: var(--red-9);
-  --color-destructive-foreground: var(--slate-1);
+  --color-destructive-foreground: white;
   --color-border: var(--slate-6);
-  --color-input: var(--slate-3);
-  --color-ring: var(--violet-9);
+  --color-input: var(--slate-7);
+  --color-ring: var(--violet-8);
   --color-success: var(--green-9);
   --color-warning: var(--amber-9);
-  --color-mention: var(--violet-9);
-  --color-online: var(--green-9);
-  --color-idle: var(--amber-9);
-  --color-dnd: var(--red-9);
 }
 
 * {
