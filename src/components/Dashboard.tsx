@@ -26,6 +26,7 @@ export default function Dashboard() {
   const [showPinDialog, setShowPinDialog] = useState(false);
   const [showKillswitch, setShowKillswitch] = useState(false);
   const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
+  const [, forceUpdate] = useState({});
 
   const activeRulesCount = rules.filter(isRuleActive).length;
 
@@ -235,7 +236,15 @@ export default function Dashboard() {
       )}
 
       {/* Dialogs */}
-      <BlockRuleDialog open={showAddDialog} onOpenChange={setShowAddDialog} />
+      <BlockRuleDialog
+        open={showAddDialog}
+        onOpenChange={setShowAddDialog}
+        onRuleAdded={() => {
+          // Force component to re-render by updating state
+          forceUpdate({});
+          setShowAddDialog(false);
+        }}
+      />
       <PinDialog
         open={showPinDialog}
         onOpenChange={setShowPinDialog}

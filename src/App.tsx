@@ -1,5 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 import {
   Shield,
   Settings as SettingsIcon,
@@ -26,6 +28,35 @@ function App() {
   const { settings } = useSettings();
   const { theme, setTheme } = useTheme();
   const [currentView, setCurrentView] = useState<View>("dashboard");
+
+  // Listen for app closing event and send webhook
+  useEffect(() => {
+    const unlisten = listen("app-closing", async () => {
+      if (
+        settings.webhookEnabled &&
+        settings.webhookUrl &&
+        settings.sendKillswitchNotifications
+      ) {
+        try {
+          await invoke("send_discord_webhook", {
+            webhookUrl: settings.webhookUrl,
+            message:
+              "⚠️ **Accountability App Closing**\n\nThe accountability app is being minimized to system tray. Monitoring continues in the background.",
+          });
+        } catch (error) {
+          console.error("Failed to send close webhook:", error);
+        }
+      }
+    });
+
+    return () => {
+      unlisten.then((fn) => fn());
+    };
+  }, [
+    settings.webhookEnabled,
+    settings.webhookUrl,
+    settings.sendKillswitchNotifications,
+  ]);
 
   if (!settings.isSetupComplete) {
     return <SetupWizard />;

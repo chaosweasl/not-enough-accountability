@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use sysinfo::{ProcessRefreshKind, System, ProcessesToUpdate};
-use tauri::State;
+use tauri::{State, Manager, Emitter};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AppInfo {
@@ -31,19 +31,162 @@ async fn get_running_processes() -> Result<Vec<AppInfo>, String> {
     let mut apps: Vec<AppInfo> = sys
         .processes()
         .iter()
-        .map(|(pid, process)| AppInfo {
-            name: process.name().to_string_lossy().to_string(),
-            path: process
+        .filter_map(|(pid, process)| {
+            let path = process
                 .exe()
                 .unwrap_or_else(|| std::path::Path::new(""))
                 .to_string_lossy()
-                .to_string(),
-            pid: Some(pid.as_u32()),
+                .to_string();
+            
+            // Only include processes with valid executable paths
+            if path.is_empty() {
+                return None;
+            }
+            
+            Some(AppInfo {
+                name: process.name().to_string_lossy().to_string(),
+                path,
+                pid: Some(pid.as_u32()),
+            })
         })
         .collect();
     
-    apps.sort_by(|a, b| a.name.to_lowercase().cmp(&b.name.to_lowercase()));
-    apps.dedup_by(|a, b| a.name.to_lowercase() == b.name.to_lowercase());
+    // Sort by path (more reliable than name)
+    apps.sort_by(|a, b| a.path.to_lowercase().cmp(&b.path.to_lowercase()));
+    
+    // Deduplicate by path (not name, since same path = same executable)
+    apps.dedup_by(|a, b| a.path.to_lowercase() == b.path.to_lowercase());
+    
+    Ok(apps)
+}
+
+#[tauri::command]
+async fn get_installed_apps() -> Result<Vec<AppInfo>, String> {
+    let mut apps = Vec::new();
+    
+    #[cfg(target_os = "windows")]
+    {
+        use windows::Win32::System::Registry::{
+            RegOpenKeyExW, RegEnumKeyExW, RegQueryValueExW, RegCloseKey,
+            HKEY_LOCAL_MACHINE, KEY_READ
+        };
+        use windows::core::PCWSTR;
+        
+        unsafe {
+            // Check common installation paths
+            let uninstall_paths = vec![
+                "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall",
+                "SOFTWARE\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall",
+            ];
+            
+            for path in uninstall_paths {
+                let path_wide: Vec<u16> = path.encode_utf16().chain(Some(0)).collect();
+                let mut hkey = Default::default();
+                
+                if RegOpenKeyExW(
+                    HKEY_LOCAL_MACHINE,
+                    PCWSTR::from_raw(path_wide.as_ptr()),
+                    0,
+                    KEY_READ,
+                    &mut hkey,
+                ).is_ok() {
+                    let mut index = 0;
+                    loop {
+                        let mut name_buffer = vec![0u16; 256];
+                        let mut name_len = name_buffer.len() as u32;
+                        
+                        if RegEnumKeyExW(
+                            hkey,
+                            index,
+                            windows::core::PWSTR::from_raw(name_buffer.as_mut_ptr()),
+                            &mut name_len,
+                            None,
+                            windows::core::PWSTR::null(),
+                            None,
+                            None,
+                        ).is_err() {
+                            break;
+                        }
+                        
+                        let subkey_name = String::from_utf16_lossy(&name_buffer[..name_len as usize]);
+                        let subkey_path = format!("{}\\{}", path, subkey_name);
+                        let subkey_wide: Vec<u16> = subkey_path.encode_utf16().chain(Some(0)).collect();
+                        
+                        let mut subkey = Default::default();
+                        if RegOpenKeyExW(
+                            HKEY_LOCAL_MACHINE,
+                            PCWSTR::from_raw(subkey_wide.as_ptr()),
+                            0,
+                            KEY_READ,
+                            &mut subkey,
+                        ).is_ok() {
+                            // Get DisplayName
+                            let display_name_key: Vec<u16> = "DisplayName".encode_utf16().chain(Some(0)).collect();
+                            let mut buffer = vec![0u16; 256];
+                            let mut buffer_size = (buffer.len() * 2) as u32;
+                            
+                            if RegQueryValueExW(
+                                subkey,
+                                PCWSTR::from_raw(display_name_key.as_ptr()),
+                                None,
+                                None,
+                                Some(buffer.as_mut_ptr() as *mut u8),
+                                Some(&mut buffer_size),
+                            ).is_ok() {
+                                let display_name = String::from_utf16_lossy(&buffer[..((buffer_size / 2) as usize).saturating_sub(1)]);
+                                
+                                if !display_name.is_empty() {
+                                    // Try to get DisplayIcon first (usually points to the .exe)
+                                    let display_icon_key: Vec<u16> = "DisplayIcon".encode_utf16().chain(Some(0)).collect();
+                                    let mut icon_buffer = vec![0u16; 512];
+                                    let mut icon_buffer_size = (icon_buffer.len() * 2) as u32;
+                                    
+                                    let exe_path = if RegQueryValueExW(
+                                        subkey,
+                                        PCWSTR::from_raw(display_icon_key.as_ptr()),
+                                        None,
+                                        None,
+                                        Some(icon_buffer.as_mut_ptr() as *mut u8),
+                                        Some(&mut icon_buffer_size),
+                                    ).is_ok() {
+                                        let icon_path = String::from_utf16_lossy(&icon_buffer[..((icon_buffer_size / 2) as usize).saturating_sub(1)]);
+                                        // DisplayIcon often has ",0" at the end for icon index, remove it
+                                        icon_path.split(',').next().unwrap_or("").trim().to_string()
+                                    } else {
+                                        String::new()
+                                    };
+                                    
+                                    // Only add if we have a valid .exe path and it's not an uninstaller
+                                    let exe_path_lower = exe_path.to_lowercase();
+                                    if !exe_path.is_empty() 
+                                        && exe_path_lower.ends_with(".exe")
+                                        && !exe_path_lower.contains("uninstall")
+                                        && !exe_path_lower.contains("uninst") {
+                                        apps.push(AppInfo {
+                                            name: display_name,
+                                            path: exe_path,
+                                            pid: None,
+                                        });
+                                    }
+                                }
+                            }
+                            
+                            let _ = RegCloseKey(subkey);
+                        }
+                        
+                        index += 1;
+                    }
+                    
+                    let _ = RegCloseKey(hkey);
+                }
+            }
+        }
+    }
+    
+    // Sort and deduplicate by executable path (not name)
+    // This prevents duplicate entries for the same application
+    apps.sort_by(|a, b| a.path.to_lowercase().cmp(&b.path.to_lowercase()));
+    apps.dedup_by(|a, b| a.path.to_lowercase() == b.path.to_lowercase());
     
     Ok(apps)
 }
@@ -200,13 +343,47 @@ fn hash_pin(pin: String) -> Result<String, String> {
     Ok(hash)
 }
 
+#[tauri::command]
+async fn notify_app_closing(webhook_url: Option<String>) -> Result<(), String> {
+    if let Some(url) = webhook_url {
+        if !url.is_empty() {
+            let client = reqwest::Client::new();
+            let webhook_message = WebhookMessage {
+                content: "⚠️ **Accountability App Closing**\n\nThe accountability app is being closed. This may affect monitoring.".to_string(),
+            };
+
+            let _ = client.post(&url).json(&webhook_message).send().await;
+        }
+    }
+    Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_shell::init())
         .manage(BlockedApps(Arc::new(Mutex::new(HashMap::new()))))
+        .setup(|app| {
+            // Handle window close event (minimize to tray instead of quitting)
+            if let Some(window) = app.get_webview_window("main") {
+                let window_clone = window.clone();
+                window.on_window_event(move |event| {
+                    if let tauri::WindowEvent::CloseRequested { .. } = event {
+                        // Don't prevent close for now - just emit event
+                        // Later can add: api.prevent_close(); and window_clone.hide();
+                        
+                        // Emit event to frontend to send webhook
+                        let _ = window_clone.emit("app-closing", ());
+                    }
+                });
+            }
+
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
             get_running_processes,
+            get_installed_apps,
             kill_process,
             block_application,
             unblock_application,
@@ -216,6 +393,7 @@ pub fn run() {
             get_browser_processes,
             verify_pin,
             hash_pin,
+            notify_app_closing,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

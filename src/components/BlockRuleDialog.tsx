@@ -21,11 +21,13 @@ import { storage } from "@/lib/storage";
 interface BlockRuleDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onRuleAdded?: () => void;
 }
 
 export default function BlockRuleDialog({
   open,
   onOpenChange,
+  onRuleAdded,
 }: BlockRuleDialogProps) {
   const { addRule } = useBlocker();
   const { settings } = useSettings();
@@ -54,8 +56,45 @@ export default function BlockRuleDialog({
   const loadApps = async () => {
     setLoading(true);
     try {
-      const processes = await invoke<AppInfo[]>("get_running_processes");
-      setApps(processes);
+      // Get both running processes and installed apps
+      const [runningProcesses, installedApps] = await Promise.all([
+        invoke<AppInfo[]>("get_running_processes"),
+        invoke<AppInfo[]>("get_installed_apps"),
+      ]);
+
+      // Filter to only include valid executable paths (.exe files)
+      // This prevents adding installer/uninstaller paths or other non-executable items
+      const filterValidExecutables = (apps: AppInfo[]) => {
+        return apps.filter((app) => {
+          const pathLower = app.path.toLowerCase();
+          // Must have .exe extension and not be an uninstaller
+          return (
+            pathLower.endsWith(".exe") &&
+            !pathLower.includes("uninstall") &&
+            !pathLower.includes("uninst") &&
+            app.path.trim() !== ""
+          );
+        });
+      };
+
+      const validRunningProcesses = filterValidExecutables(runningProcesses);
+      const validInstalledApps = filterValidExecutables(installedApps);
+
+      // Merge and deduplicate by executable path (not just name)
+      // This prevents the same app from being added multiple times
+      const allApps = [...validRunningProcesses, ...validInstalledApps];
+      const uniqueApps = Array.from(
+        new Map(
+          allApps.map((app) => [app.path.toLowerCase(), app])
+        ).values()
+      );
+
+      // Sort alphabetically by name
+      uniqueApps.sort((a, b) =>
+        a.name.toLowerCase().localeCompare(b.name.toLowerCase())
+      );
+
+      setApps(uniqueApps);
     } catch (error) {
       console.error("Failed to load apps:", error);
     } finally {
@@ -135,6 +174,11 @@ export default function BlockRuleDialog({
     setSelectedApp(null);
     setSearchTerm("");
     onOpenChange(false);
+
+    // Notify parent that a rule was added
+    if (onRuleAdded) {
+      onRuleAdded();
+    }
   };
 
   const toggleDay = (day: number) => {
@@ -160,7 +204,7 @@ export default function BlockRuleDialog({
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search running apps..."
+                placeholder="Search apps (running or installed)..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-9"
@@ -172,14 +216,14 @@ export default function BlockRuleDialog({
                 Loading applications...
               </p>
             ) : (
-              <div className="border rounded-lg max-h-48 overflow-y-auto">
+              <div className="border rounded-lg max-h-64 overflow-y-auto">
                 {filteredApps.length === 0 ? (
                   <p className="p-4 text-sm text-muted-foreground text-center">
                     No applications found
                   </p>
                 ) : (
                   <div className="divide-y">
-                    {filteredApps.slice(0, 20).map((app) => (
+                    {filteredApps.slice(0, 50).map((app) => (
                       <button
                         key={`${app.name}-${app.path}`}
                         onClick={() => setSelectedApp(app)}

@@ -19,9 +19,7 @@ export default function Settings() {
   const { settings, updateSettings } = useSettings();
   const [webhookUrl, setWebhookUrl] = useState(settings.webhookUrl || "");
   const [showPinDialog, setShowPinDialog] = useState(false);
-  const [pendingChanges, setPendingChanges] = useState<
-    Partial<typeof settings>
-  >({});
+  const [pendingAction, setPendingAction] = useState<"webhook" | "changePin" | null>(null);
   const [testingWebhook, setTestingWebhook] = useState(false);
   const [webhookTestResult, setWebhookTestResult] = useState<string>("");
 
@@ -35,23 +33,27 @@ export default function Settings() {
   };
 
   const handleToggleWebhook = () => {
-    setPendingChanges({ webhookEnabled: !settings.webhookEnabled });
+    setPendingAction("webhook");
     setShowPinDialog(true);
   };
 
   const handlePinVerified = async () => {
-    if (pendingChanges.webhookEnabled !== undefined) {
-      updateSettings(pendingChanges);
-      setPendingChanges({});
+    // Handle webhook toggle
+    if (pendingAction === "webhook") {
+      updateSettings({ webhookEnabled: !settings.webhookEnabled });
+      setPendingAction(null);
     }
 
-    if (showChangePin && newPin && confirmNewPin) {
+    // Handle PIN change
+    if (pendingAction === "changePin" && newPin && confirmNewPin) {
       if (newPin.length < 4) {
         setPinError("PIN must be at least 4 digits");
+        setShowPinDialog(false);
         return;
       }
       if (newPin !== confirmNewPin) {
         setPinError("PINs do not match");
+        setShowPinDialog(false);
         return;
       }
 
@@ -62,8 +64,10 @@ export default function Settings() {
         setConfirmNewPin("");
         setShowChangePin(false);
         setPinError("");
+        setPendingAction(null);
       } catch (error) {
         setPinError("Failed to change PIN");
+        setShowPinDialog(false);
       }
     }
   };
@@ -93,17 +97,36 @@ export default function Settings() {
 
   const handleChangePinClick = () => {
     setShowChangePin(true);
+  };
+
+  const handleConfirmPinChange = () => {
+    if (newPin.length < 4) {
+      setPinError("PIN must be at least 4 digits");
+      return;
+    }
+    if (newPin !== confirmNewPin) {
+      setPinError("PINs do not match");
+      return;
+    }
+
+    // Clear any previous errors and show PIN dialog to verify current PIN before changing
+    setPinError("");
+    setPendingAction("changePin");
     setShowPinDialog(true);
   };
 
   const handlePinDialogClose = (open: boolean) => {
     setShowPinDialog(open);
-    if (!open) {
-      // Reset PIN change state if dialog is closed without completion
-      if (showChangePin && newPin) {
-        // Don't reset if the user just verified successfully
-        // (in that case, handlePinVerified already reset everything)
-      }
+    if (!open && pendingAction !== "changePin") {
+      // Only reset if we're not in the middle of a PIN change
+      setPendingAction(null);
+    } else if (!open && pendingAction === "changePin") {
+      // If closing during PIN change without verification, reset the form
+      setShowChangePin(false);
+      setNewPin("");
+      setConfirmNewPin("");
+      setPinError("");
+      setPendingAction(null);
     }
   };
 
@@ -212,7 +235,7 @@ export default function Settings() {
                     Cancel
                   </Button>
                   <Button
-                    onClick={() => setShowPinDialog(true)}
+                    onClick={handleConfirmPinChange}
                     disabled={!newPin || !confirmNewPin}
                     className="flex-1 h-11 shadow-md bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 font-semibold"
                   >
