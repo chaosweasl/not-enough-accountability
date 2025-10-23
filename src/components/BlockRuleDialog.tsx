@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { Search } from "lucide-react";
+import { Search, RefreshCw } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -212,9 +212,23 @@ export default function BlockRuleDialog({
           <div className="space-y-10">
             {/* App Selection */}
             <div className="space-y-5">
-              <Label className="text-xl font-semibold">
-                Select Application
-              </Label>
+              <div className="flex items-center justify-between">
+                <Label className="text-xl font-semibold">
+                  Select Application
+                </Label>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={loadApps}
+                  disabled={loading}
+                  className="gap-2"
+                >
+                  <RefreshCw
+                    className={`h-4 w-4 ${loading ? "animate-spin" : ""}`}
+                  />
+                  Refresh
+                </Button>
+              </div>
               <div className="relative">
                 <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 <Input

@@ -61,6 +61,102 @@ async fn get_running_processes() -> Result<Vec<AppInfo>, String> {
     Ok(apps)
 }
 
+// Helper function to scan a directory for executables (non-recursive for performance)
+fn scan_directory_for_exes(dir: &str, max_depth: usize) -> Vec<AppInfo> {
+    use std::fs;
+    use std::path::Path;
+    
+    let mut apps = Vec::new();
+    
+    fn scan_recursive(path: &Path, current_depth: usize, max_depth: usize, apps: &mut Vec<AppInfo>) {
+        if current_depth > max_depth {
+            return;
+        }
+        
+        if let Ok(entries) = fs::read_dir(path) {
+            for entry in entries.flatten() {
+                if let Ok(metadata) = entry.metadata() {
+                    let entry_path = entry.path();
+                    
+                    if metadata.is_file() {
+                        if let Some(extension) = entry_path.extension() {
+                            if extension.eq_ignore_ascii_case("exe") {
+                                let path_str = entry_path.to_string_lossy().to_string();
+                                let path_lower = path_str.to_lowercase();
+                                
+                                // Skip uninstallers and other utility executables
+                                if !path_lower.contains("uninstall") 
+                                    && !path_lower.contains("uninst")
+                                    && !path_lower.contains("unins000")
+                                    && !path_lower.contains("setup")
+                                    && !path_lower.contains("installer") {
+                                    
+                                    // Extract name from filename
+                                    let name = entry_path
+                                        .file_stem()
+                                        .unwrap_or_default()
+                                        .to_string_lossy()
+                                        .to_string();
+                                    
+                                    apps.push(AppInfo {
+                                        name,
+                                        path: path_str,
+                                        pid: None,
+                                    });
+                                }
+                            }
+                        }
+                    } else if metadata.is_dir() && current_depth < max_depth {
+                        // Continue scanning subdirectories
+                        scan_recursive(&entry_path, current_depth + 1, max_depth, apps);
+                    }
+                }
+            }
+        }
+    }
+    
+    scan_recursive(Path::new(dir), 0, max_depth, &mut apps);
+    apps
+}
+
+// Helper function to find Steam library folders
+fn get_steam_library_paths() -> Vec<String> {
+    use std::fs;
+    use std::path::Path;
+    
+    let mut paths = Vec::new();
+    
+    // Default Steam installation path
+    let default_steam_path = "C:\\Program Files (x86)\\Steam\\steamapps\\common";
+    if Path::new(default_steam_path).exists() {
+        paths.push(default_steam_path.to_string());
+    }
+    
+    // Try to read libraryfolders.vdf to find additional Steam library locations
+    let library_folders_path = "C:\\Program Files (x86)\\Steam\\steamapps\\libraryfolders.vdf";
+    if let Ok(content) = fs::read_to_string(library_folders_path) {
+        // Parse the VDF file to find library paths
+        for line in content.lines() {
+            if line.contains("\"path\"") {
+                // Extract path from line like: "path"		"C:\\SteamLibrary"
+                if let Some(start) = line.rfind('"') {
+                    if let Some(end) = line[..start].rfind('"') {
+                        let path = &line[end + 1..start];
+                        // Unescape the path (replace \\ with \)
+                        let unescaped = path.replace("\\\\", "\\");
+                        let steamapps_common = format!("{}\\steamapps\\common", unescaped);
+                        if Path::new(&steamapps_common).exists() {
+                            paths.push(steamapps_common);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    paths
+}
+
 #[tauri::command]
 async fn get_installed_apps() -> Result<Vec<AppInfo>, String> {
     let mut apps = Vec::new();
@@ -73,8 +169,25 @@ async fn get_installed_apps() -> Result<Vec<AppInfo>, String> {
         };
         use windows::core::PCWSTR;
         
+        // 1. Scan common installation directories for executables
+        let scan_dirs = vec![
+            ("C:\\Program Files", 2),           // Scan 2 levels deep
+            ("C:\\Program Files (x86)", 2),     // Scan 2 levels deep
+        ];
+        
+        for (dir, depth) in scan_dirs {
+            if std::path::Path::new(dir).exists() {
+                apps.extend(scan_directory_for_exes(dir, depth));
+            }
+        }
+        
+        // 2. Scan Steam library folders
+        for steam_path in get_steam_library_paths() {
+            apps.extend(scan_directory_for_exes(&steam_path, 1)); // Only scan game folders, not deep
+        }
+        
+        // 3. Check Windows Registry for installed applications
         unsafe {
-            // Check common installation paths
             let uninstall_paths = vec![
                 "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall",
                 "SOFTWARE\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall",
