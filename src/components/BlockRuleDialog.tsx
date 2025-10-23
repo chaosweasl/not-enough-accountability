@@ -216,18 +216,48 @@ export default function BlockRuleDialog({
                 <Label className="text-xl font-semibold">
                   Select Application
                 </Label>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={loadApps}
-                  disabled={loading}
-                  className="gap-2"
-                >
-                  <RefreshCw
-                    className={`h-4 w-4 ${loading ? "animate-spin" : ""}`}
-                  />
-                  Refresh
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={async () => {
+                      try {
+                        const result = await invoke<{
+                          name: string;
+                          path: string;
+                        } | null>("browse_for_executable");
+                        if (result) {
+                          setSelectedApp({
+                            name: result.name,
+                            path: result.path,
+                            pid: undefined,
+                          });
+                        }
+                      } catch (error) {
+                        console.error(
+                          "Failed to browse for executable:",
+                          error
+                        );
+                      }
+                    }}
+                    disabled={loading}
+                    className="gap-2"
+                  >
+                    Browse...
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={loadApps}
+                    disabled={loading}
+                    className="gap-2"
+                  >
+                    <RefreshCw
+                      className={`h-4 w-4 ${loading ? "animate-spin" : ""}`}
+                    />
+                    Refresh
+                  </Button>
+                </div>
               </div>
               <div className="relative">
                 <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />

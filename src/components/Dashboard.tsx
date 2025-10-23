@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { Power, PowerOff, Plus, AlertTriangle } from "lucide-react";
+import { Power, PowerOff, Plus, AlertTriangle, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -11,28 +11,55 @@ import {
 } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useSettings } from "@/hooks/useSettings";
 import { useBlockerContext } from "@/contexts/BlockerContext";
 import { isRuleActive } from "@/lib/helpers";
+import { storage } from "@/lib/storage";
 import BlockRuleDialog from "./BlockRuleDialog";
+import WebsiteRuleDialog from "./WebsiteRuleDialog";
 import PinDialog from "./PinDialog";
 import KillswitchDialog from "./KillswitchDialog";
 import BlockRuleCard from "./BlockRuleCard";
+import WebsiteRuleCard from "./WebsiteRuleCard";
 
 export default function Dashboard() {
   const { settings, updateSettings } = useSettings();
-  const { rules, setIsEnforcing, removeRule, updateRule } = useBlockerContext();
+  const {
+    rules,
+    websiteRules,
+    setIsEnforcing,
+    removeRule,
+    removeWebsiteRule,
+    updateRule,
+    updateWebsiteRule,
+  } = useBlockerContext();
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [showAddWebsiteDialog, setShowAddWebsiteDialog] = useState(false);
   const [showPinDialog, setShowPinDialog] = useState(false);
   const [showKillswitch, setShowKillswitch] = useState(false);
   const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
 
   const activeRulesCount = rules.filter(isRuleActive).length;
+  const activeWebsiteRulesCount = websiteRules.filter(isRuleActive).length;
+
+  // Helper to execute action with PIN check
+  const executeWithPinCheck = (action: () => void) => {
+    if (storage.isPinSessionValid()) {
+      // PIN session is still valid, execute immediately
+      action();
+    } else {
+      // Need PIN verification
+      setPendingAction(() => action);
+      setShowPinDialog(true);
+    }
+  };
 
   const handleToggleBlocking = async () => {
     if (settings.blockingEnabled) {
       // Need PIN to disable
-      setPendingAction(() => async () => {
+      executeWithPinCheck(async () => {
         updateSettings({ blockingEnabled: false });
         setIsEnforcing(false);
 
@@ -53,7 +80,6 @@ export default function Dashboard() {
           }
         }
       });
-      setShowPinDialog(true);
     } else {
       updateSettings({ blockingEnabled: true });
       setIsEnforcing(true);
@@ -79,7 +105,7 @@ export default function Dashboard() {
 
   const handleRemoveRule = (ruleId: string) => {
     const rule = rules.find((r) => r.id === ruleId);
-    setPendingAction(() => async () => {
+    executeWithPinCheck(async () => {
       removeRule(ruleId);
 
       // Send webhook notification if enabled
@@ -114,7 +140,45 @@ export default function Dashboard() {
         }
       }
     });
-    setShowPinDialog(true);
+  };
+
+  const handleRemoveWebsiteRule = (ruleId: string) => {
+    const rule = websiteRules.find((r) => r.id === ruleId);
+    executeWithPinCheck(async () => {
+      removeWebsiteRule(ruleId);
+
+      // Send webhook notification if enabled
+      if (
+        rule &&
+        settings.webhookEnabled &&
+        settings.webhookUrl &&
+        settings.sendUnblockNotifications
+      ) {
+        try {
+          let message = `🗑️ **Website Block Rule Deleted**\n\n**Domain:** ${rule.domain}\n**Type:** ${rule.type}`;
+
+          if (rule.type === "timer" && rule.duration) {
+            message += `\n**Duration:** ${rule.duration} minutes`;
+          } else if (rule.type === "schedule" && rule.days) {
+            const dayNames = rule.days
+              .map((d) => ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][d])
+              .join(", ");
+            message += `\n**Days:** ${dayNames}\n**Time:** ${
+              rule.startHour || 0
+            }:${String(rule.startMinute || 0).padStart(2, "0")} - ${
+              rule.endHour || 0
+            }:${String(rule.endMinute || 0).padStart(2, "0")}`;
+          }
+
+          await invoke("send_discord_webhook", {
+            webhookUrl: settings.webhookUrl,
+            message,
+          });
+        } catch (error) {
+          console.error("Failed to send webhook:", error);
+        }
+      }
+    });
   };
 
   const handlePinVerified = () => {
@@ -153,11 +217,18 @@ export default function Dashboard() {
                 <CardDescription>
                   {settings.blockingEnabled ? (
                     <span className="text-success">
-                      Active • {activeRulesCount} rule
-                      {activeRulesCount !== 1 ? "s" : ""} enforced
+                      Active • {activeRulesCount} app rule
+                      {activeRulesCount !== 1 ? "s" : ""},{" "}
+                      {activeWebsiteRulesCount} website rule
+                      {activeWebsiteRulesCount !== 1 ? "s" : ""} enforced
                     </span>
                   ) : (
                     "Protection is currently disabled"
+                  )}
+                  {storage.isPinSessionValid() && (
+                    <Badge variant="outline" className="ml-2 text-xs">
+                      🔓 PIN session active
+                    </Badge>
                   )}
                 </CardDescription>
               </div>
@@ -193,47 +264,110 @@ export default function Dashboard() {
             <AlertTriangle className="mr-2 h-4 w-4" />
             Killswitch
           </Button>
-          <Button onClick={() => setShowAddDialog(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            Add Block Rule
-          </Button>
         </div>
       </div>
 
-      {/* Rules List */}
-      {rules.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <div className="p-4 rounded-full bg-primary/10 mb-4">
-              <Power className="h-12 w-12 text-primary" />
-            </div>
-            <h3 className="text-lg font-semibold mb-2">No block rules yet</h3>
-            <p className="text-sm text-muted-foreground text-center mb-6 max-w-md">
-              Create your first block rule to start managing distracting apps
-            </p>
+      {/* Rules Tabs */}
+      <Tabs defaultValue="apps" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="apps">Applications ({rules.length})</TabsTrigger>
+          <TabsTrigger value="websites">
+            Websites ({websiteRules.length})
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="apps" className="space-y-4">
+          <div className="flex justify-end">
             <Button onClick={() => setShowAddDialog(true)}>
               <Plus className="mr-2 h-4 w-4" />
-              Add Your First Rule
+              Add App Rule
             </Button>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="space-y-3">
-          {rules.map((rule) => (
-            <BlockRuleCard
-              key={rule.id}
-              rule={rule}
-              onRemove={() => handleRemoveRule(rule.id)}
-              onToggle={(active: boolean) =>
-                updateRule(rule.id, { isActive: active })
-              }
-            />
-          ))}
-        </div>
-      )}
+          </div>
+
+          {rules.length === 0 ? (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-12">
+                <div className="p-4 rounded-full bg-primary/10 mb-4">
+                  <Power className="h-12 w-12 text-primary" />
+                </div>
+                <h3 className="text-lg font-semibold mb-2">
+                  No app block rules yet
+                </h3>
+                <p className="text-sm text-muted-foreground text-center mb-6 max-w-md">
+                  Create your first block rule to start managing distracting
+                  apps
+                </p>
+                <Button onClick={() => setShowAddDialog(true)}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Your First App Rule
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-3">
+              {rules.map((rule) => (
+                <BlockRuleCard
+                  key={rule.id}
+                  rule={rule}
+                  onRemove={() => handleRemoveRule(rule.id)}
+                  onToggle={(active: boolean) =>
+                    updateRule(rule.id, { isActive: active })
+                  }
+                />
+              ))}
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="websites" className="space-y-4">
+          <div className="flex justify-end">
+            <Button onClick={() => setShowAddWebsiteDialog(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Website Rule
+            </Button>
+          </div>
+
+          {websiteRules.length === 0 ? (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-12">
+                <div className="p-4 rounded-full bg-blue-500/10 mb-4">
+                  <Globe className="h-12 w-12 text-blue-500" />
+                </div>
+                <h3 className="text-lg font-semibold mb-2">
+                  No website block rules yet
+                </h3>
+                <p className="text-sm text-muted-foreground text-center mb-6 max-w-md">
+                  Block distracting websites by category or add custom domains
+                </p>
+                <Button onClick={() => setShowAddWebsiteDialog(true)}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Your First Website Rule
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-3">
+              {websiteRules.map((rule) => (
+                <WebsiteRuleCard
+                  key={rule.id}
+                  rule={rule}
+                  onRemove={() => handleRemoveWebsiteRule(rule.id)}
+                  onToggle={(active: boolean) =>
+                    updateWebsiteRule(rule.id, { isActive: active })
+                  }
+                />
+              ))}
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
 
       {/* Dialogs */}
       <BlockRuleDialog open={showAddDialog} onOpenChange={setShowAddDialog} />
+      <WebsiteRuleDialog
+        open={showAddWebsiteDialog}
+        onOpenChange={setShowAddWebsiteDialog}
+      />
       <PinDialog
         open={showPinDialog}
         onOpenChange={setShowPinDialog}

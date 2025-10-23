@@ -165,15 +165,24 @@ async fn get_installed_apps() -> Result<Vec<AppInfo>, String> {
     {
         use windows::Win32::System::Registry::{
             RegOpenKeyExW, RegEnumKeyExW, RegQueryValueExW, RegCloseKey,
-            HKEY_LOCAL_MACHINE, KEY_READ
+            HKEY_LOCAL_MACHINE, HKEY_CURRENT_USER, KEY_READ
         };
         use windows::core::PCWSTR;
+        use std::env;
         
         // 1. Scan common installation directories for executables
-        let scan_dirs = vec![
+        let mut scan_dirs = vec![
             ("C:\\Program Files", 2),           // Scan 2 levels deep
             ("C:\\Program Files (x86)", 2),     // Scan 2 levels deep
         ];
+        
+        // Add user-specific directories
+        if let Ok(userprofile) = env::var("USERPROFILE") {
+            scan_dirs.push((format!("{}\\AppData\\Local\\Programs", userprofile).leak(), 2));
+        }
+        if let Ok(localappdata) = env::var("LOCALAPPDATA") {
+            scan_dirs.push((format!("{}\\Programs", localappdata).leak(), 2));
+        }
         
         for (dir, depth) in scan_dirs {
             if std::path::Path::new(dir).exists() {
@@ -186,96 +195,137 @@ async fn get_installed_apps() -> Result<Vec<AppInfo>, String> {
             apps.extend(scan_directory_for_exes(&steam_path, 1)); // Only scan game folders, not deep
         }
         
+        // Helper function to query registry value
+        let query_reg_string = |hkey, key_name: &str| -> Option<String> {
+            unsafe {
+                let key_wide: Vec<u16> = key_name.encode_utf16().chain(Some(0)).collect();
+                let mut buffer = vec![0u16; 512];
+                let mut buffer_size = (buffer.len() * 2) as u32;
+                
+                if RegQueryValueExW(
+                    hkey,
+                    PCWSTR::from_raw(key_wide.as_ptr()),
+                    None,
+                    None,
+                    Some(buffer.as_mut_ptr() as *mut u8),
+                    Some(&mut buffer_size),
+                ).is_ok() && buffer_size > 0 {
+                    let value = String::from_utf16_lossy(&buffer[..((buffer_size / 2) as usize).saturating_sub(1)]);
+                    if !value.trim().is_empty() {
+                        return Some(value.trim().to_string());
+                    }
+                }
+            }
+            None
+        };
+        
         // 3. Check Windows Registry for installed applications
         unsafe {
-            let uninstall_paths = vec![
-                "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall",
-                "SOFTWARE\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall",
+            let registry_roots = vec![
+                (HKEY_LOCAL_MACHINE, vec![
+                    "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall",
+                    "SOFTWARE\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall",
+                ]),
+                (HKEY_CURRENT_USER, vec![
+                    "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall",
+                ]),
             ];
             
-            for path in uninstall_paths {
-                let path_wide: Vec<u16> = path.encode_utf16().chain(Some(0)).collect();
-                let mut hkey = Default::default();
-                
-                if RegOpenKeyExW(
-                    HKEY_LOCAL_MACHINE,
-                    PCWSTR::from_raw(path_wide.as_ptr()),
-                    0,
-                    KEY_READ,
-                    &mut hkey,
-                ).is_ok() {
-                    let mut index = 0;
-                    loop {
-                        let mut name_buffer = vec![0u16; 256];
-                        let mut name_len = name_buffer.len() as u32;
-                        
-                        if RegEnumKeyExW(
-                            hkey,
-                            index,
-                            windows::core::PWSTR::from_raw(name_buffer.as_mut_ptr()),
-                            &mut name_len,
-                            None,
-                            windows::core::PWSTR::null(),
-                            None,
-                            None,
-                        ).is_err() {
-                            break;
-                        }
-                        
-                        let subkey_name = String::from_utf16_lossy(&name_buffer[..name_len as usize]);
-                        let subkey_path = format!("{}\\{}", path, subkey_name);
-                        let subkey_wide: Vec<u16> = subkey_path.encode_utf16().chain(Some(0)).collect();
-                        
-                        let mut subkey = Default::default();
-                        if RegOpenKeyExW(
-                            HKEY_LOCAL_MACHINE,
-                            PCWSTR::from_raw(subkey_wide.as_ptr()),
-                            0,
-                            KEY_READ,
-                            &mut subkey,
-                        ).is_ok() {
-                            // Get DisplayName
-                            let display_name_key: Vec<u16> = "DisplayName".encode_utf16().chain(Some(0)).collect();
-                            let mut buffer = vec![0u16; 256];
-                            let mut buffer_size = (buffer.len() * 2) as u32;
+            for (root_key, uninstall_paths) in registry_roots {
+                for path in uninstall_paths {
+                    let path_wide: Vec<u16> = path.encode_utf16().chain(Some(0)).collect();
+                    let mut hkey = Default::default();
+                    
+                    if RegOpenKeyExW(
+                        root_key,
+                        PCWSTR::from_raw(path_wide.as_ptr()),
+                        0,
+                        KEY_READ,
+                        &mut hkey,
+                    ).is_ok() {
+                        let mut index = 0;
+                        loop {
+                            let mut name_buffer = vec![0u16; 256];
+                            let mut name_len = name_buffer.len() as u32;
                             
-                            if RegQueryValueExW(
-                                subkey,
-                                PCWSTR::from_raw(display_name_key.as_ptr()),
+                            if RegEnumKeyExW(
+                                hkey,
+                                index,
+                                windows::core::PWSTR::from_raw(name_buffer.as_mut_ptr()),
+                                &mut name_len,
+                                None,
+                                windows::core::PWSTR::null(),
                                 None,
                                 None,
-                                Some(buffer.as_mut_ptr() as *mut u8),
-                                Some(&mut buffer_size),
+                            ).is_err() {
+                                break;
+                            }
+                            
+                            let subkey_name = String::from_utf16_lossy(&name_buffer[..name_len as usize]);
+                            let subkey_path = format!("{}\\{}", path, subkey_name);
+                            let subkey_wide: Vec<u16> = subkey_path.encode_utf16().chain(Some(0)).collect();
+                            
+                            let mut subkey = Default::default();
+                            if RegOpenKeyExW(
+                                root_key,
+                                PCWSTR::from_raw(subkey_wide.as_ptr()),
+                                0,
+                                KEY_READ,
+                                &mut subkey,
                             ).is_ok() {
-                                let display_name = String::from_utf16_lossy(&buffer[..((buffer_size / 2) as usize).saturating_sub(1)]);
-                                
-                                if !display_name.is_empty() {
-                                    // Try to get DisplayIcon first (usually points to the .exe)
-                                    let display_icon_key: Vec<u16> = "DisplayIcon".encode_utf16().chain(Some(0)).collect();
-                                    let mut icon_buffer = vec![0u16; 512];
-                                    let mut icon_buffer_size = (icon_buffer.len() * 2) as u32;
+                                // Get DisplayName
+                                if let Some(display_name) = query_reg_string(subkey, "DisplayName") {
+                                    // Try multiple methods to find the executable
+                                    let mut exe_path = String::new();
                                     
-                                    let exe_path = if RegQueryValueExW(
-                                        subkey,
-                                        PCWSTR::from_raw(display_icon_key.as_ptr()),
-                                        None,
-                                        None,
-                                        Some(icon_buffer.as_mut_ptr() as *mut u8),
-                                        Some(&mut icon_buffer_size),
-                                    ).is_ok() {
-                                        let icon_path = String::from_utf16_lossy(&icon_buffer[..((icon_buffer_size / 2) as usize).saturating_sub(1)]);
+                                    // Method 1: DisplayIcon (often points to the .exe)
+                                    if let Some(icon_path) = query_reg_string(subkey, "DisplayIcon") {
                                         // DisplayIcon often has ",0" at the end for icon index, remove it
-                                        icon_path.split(',').next().unwrap_or("").trim().to_string()
-                                    } else {
-                                        String::new()
-                                    };
+                                        let clean_path = icon_path.split(',').next().unwrap_or("").trim();
+                                        // Remove quotes if present
+                                        let clean_path = clean_path.trim_matches('"');
+                                        if clean_path.to_lowercase().ends_with(".exe") {
+                                            exe_path = clean_path.to_string();
+                                        }
+                                    }
+                                    
+                                    // Method 2: InstallLocation + scan for .exe files
+                                    if exe_path.is_empty() {
+                                        if let Some(install_loc) = query_reg_string(subkey, "InstallLocation") {
+                                            let install_path = std::path::Path::new(&install_loc);
+                                            if install_path.exists() {
+                                                // Look for .exe files in the installation directory
+                                                if let Ok(entries) = std::fs::read_dir(install_path) {
+                                                    for entry in entries.flatten() {
+                                                        if let Ok(metadata) = entry.metadata() {
+                                                            if metadata.is_file() {
+                                                                if let Some(ext) = entry.path().extension() {
+                                                                    if ext.eq_ignore_ascii_case("exe") {
+                                                                        let path_str = entry.path().to_string_lossy().to_string();
+                                                                        let path_lower = path_str.to_lowercase();
+                                                                        // Skip uninstallers
+                                                                        if !path_lower.contains("uninstall") 
+                                                                            && !path_lower.contains("uninst") {
+                                                                            exe_path = path_str;
+                                                                            break;
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
                                     
                                     // Only add if we have a valid .exe path and it's not an uninstaller
                                     let exe_path_lower = exe_path.to_lowercase();
                                     if !exe_path.is_empty() 
                                         && exe_path_lower.ends_with(".exe")
                                         && !exe_path_lower.contains("uninstall")
-                                        && !exe_path_lower.contains("uninst") {
+                                        && !exe_path_lower.contains("uninst")
+                                        && std::path::Path::new(&exe_path).exists() {
                                         apps.push(AppInfo {
                                             name: display_name,
                                             path: exe_path,
@@ -283,15 +333,15 @@ async fn get_installed_apps() -> Result<Vec<AppInfo>, String> {
                                         });
                                     }
                                 }
+                                
+                                let _ = RegCloseKey(subkey);
                             }
                             
-                            let _ = RegCloseKey(subkey);
+                            index += 1;
                         }
                         
-                        index += 1;
+                        let _ = RegCloseKey(hkey);
                     }
-                    
-                    let _ = RegCloseKey(hkey);
                 }
             }
         }
@@ -303,6 +353,48 @@ async fn get_installed_apps() -> Result<Vec<AppInfo>, String> {
     apps.dedup_by(|a, b| a.path.to_lowercase() == b.path.to_lowercase());
     
     Ok(apps)
+}
+
+#[tauri::command]
+async fn browse_for_executable(app: tauri::AppHandle) -> Result<Option<AppInfo>, String> {
+    use tauri_plugin_dialog::DialogExt;
+    use std::sync::{Arc, Mutex};
+    use std::path::PathBuf;
+    
+    let result: Arc<Mutex<Option<PathBuf>>> = Arc::new(Mutex::new(None));
+    let result_clone = Arc::clone(&result);
+    
+    app.dialog()
+        .file()
+        .add_filter("Executable Files", &["exe"])
+        .set_title("Select an application to block")
+        .pick_file(move |file_path| {
+            let mut res = result_clone.lock().unwrap();
+            // Convert FilePath to PathBuf
+            *res = file_path.and_then(|fp| fp.as_path().map(|p| p.to_path_buf()));
+        });
+    
+    // Small delay to allow dialog to complete
+    tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
+    
+    let file_path = result.lock().unwrap().clone();
+    
+    if let Some(path) = file_path {
+        let path_str = path.to_string_lossy().to_string();
+        let name = path
+            .file_stem()
+            .unwrap_or_default()
+            .to_string_lossy()
+            .to_string();
+        
+        Ok(Some(AppInfo {
+            name,
+            path: path_str,
+            pid: None,
+        }))
+    } else {
+        Ok(None)
+    }
 }
 
 #[tauri::command]
@@ -457,6 +549,128 @@ fn hash_pin(pin: String) -> Result<String, String> {
     Ok(hash)
 }
 
+// Website blocking via hosts file modification
+#[cfg(target_os = "windows")]
+const HOSTS_FILE_PATH: &str = "C:\\Windows\\System32\\drivers\\etc\\hosts";
+
+#[cfg(not(target_os = "windows"))]
+const HOSTS_FILE_PATH: &str = "/etc/hosts";
+
+const NEU_MARKER_START: &str = "# NEU_BLOCK_START - Do not edit this section manually";
+const NEU_MARKER_END: &str = "# NEU_BLOCK_END";
+
+#[tauri::command]
+async fn apply_website_blocks(domains: Vec<String>) -> Result<(), String> {
+    use std::fs::{self, OpenOptions};
+    use std::io::{Read, Write};
+
+    // Read existing hosts file
+    let mut hosts_content = String::new();
+    if let Ok(mut file) = fs::File::open(HOSTS_FILE_PATH) {
+        file.read_to_string(&mut hosts_content)
+            .map_err(|e| format!("Failed to read hosts file: {}", e))?;
+    }
+
+    // Remove existing NEU block if present
+    let mut new_content = String::new();
+    let mut skip_neu_block = false;
+    
+    for line in hosts_content.lines() {
+        if line.contains(NEU_MARKER_START) {
+            skip_neu_block = true;
+            continue;
+        }
+        if line.contains(NEU_MARKER_END) {
+            skip_neu_block = false;
+            continue;
+        }
+        if !skip_neu_block {
+            new_content.push_str(line);
+            new_content.push('\n');
+        }
+    }
+
+    // Add NEU block with new domains if any domains provided
+    if !domains.is_empty() {
+        new_content.push_str("\n");
+        new_content.push_str(NEU_MARKER_START);
+        new_content.push('\n');
+        
+        for domain in domains {
+            let domain = domain.trim();
+            if !domain.is_empty() {
+                new_content.push_str(&format!("127.0.0.1 {}\n", domain));
+                new_content.push_str(&format!("127.0.0.1 www.{}\n", domain));
+            }
+        }
+        
+        new_content.push_str(NEU_MARKER_END);
+        new_content.push('\n');
+    }
+
+    // Write back to hosts file (requires admin privileges)
+    let mut file = OpenOptions::new()
+        .write(true)
+        .truncate(true)
+        .open(HOSTS_FILE_PATH)
+        .map_err(|e| format!("Failed to open hosts file for writing (requires admin): {}", e))?;
+
+    file.write_all(new_content.as_bytes())
+        .map_err(|e| format!("Failed to write to hosts file: {}", e))?;
+
+    // Flush DNS cache on Windows
+    #[cfg(target_os = "windows")]
+    {
+        use std::process::Command;
+        let _ = Command::new("ipconfig")
+            .args(["/flushdns"])
+            .output();
+    }
+
+    Ok(())
+}
+
+#[tauri::command]
+async fn remove_website_blocks() -> Result<(), String> {
+    apply_website_blocks(vec![]).await
+}
+
+#[tauri::command]
+async fn get_blocked_domains() -> Result<Vec<String>, String> {
+    use std::fs;
+    use std::io::Read;
+
+    let mut hosts_content = String::new();
+    if let Ok(mut file) = fs::File::open(HOSTS_FILE_PATH) {
+        file.read_to_string(&mut hosts_content)
+            .map_err(|e| format!("Failed to read hosts file: {}", e))?;
+    }
+
+    let mut domains = Vec::new();
+    let mut in_neu_block = false;
+
+    for line in hosts_content.lines() {
+        if line.contains(NEU_MARKER_START) {
+            in_neu_block = true;
+            continue;
+        }
+        if line.contains(NEU_MARKER_END) {
+            in_neu_block = false;
+            continue;
+        }
+        if in_neu_block && line.trim().starts_with("127.0.0.1") {
+            if let Some(domain) = line.split_whitespace().nth(1) {
+                // Skip www. variants to avoid duplicates
+                if !domain.starts_with("www.") {
+                    domains.push(domain.to_string());
+                }
+            }
+        }
+    }
+
+    Ok(domains)
+}
+
 #[tauri::command]
 async fn notify_app_closing(webhook_url: Option<String>) -> Result<(), String> {
     if let Some(url) = webhook_url {
@@ -480,6 +694,7 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_notification::init())
+        .plugin(tauri_plugin_dialog::init())
         .manage(BlockedApps(Arc::new(Mutex::new(HashMap::new()))))
         .setup(|app| {
             // Create system tray
@@ -557,6 +772,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             get_running_processes,
             get_installed_apps,
+            browse_for_executable,
             kill_process,
             block_application,
             unblock_application,
@@ -566,6 +782,9 @@ pub fn run() {
             get_browser_processes,
             verify_pin,
             hash_pin,
+            apply_website_blocks,
+            remove_website_blocks,
+            get_blocked_domains,
             notify_app_closing,
         ])
         .run(tauri::generate_context!())

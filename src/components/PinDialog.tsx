@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { useSettings } from "@/hooks/useSettings";
+import { storage } from "@/lib/storage";
 
 interface PinDialogProps {
   open: boolean;
@@ -44,6 +45,8 @@ export default function PinDialog({
       if (isValid) {
         setError("");
         setPin("");
+        // Set PIN session (valid for 10 minutes)
+        storage.setPinSession();
         onVerified();
         onOpenChange(false);
       } else {
@@ -68,7 +71,8 @@ export default function PinDialog({
         <DialogHeader>
           <DialogTitle>Enter PIN</DialogTitle>
           <DialogDescription>
-            Enter your PIN to perform this action
+            Enter your PIN to perform this action. You won't need to enter it
+            again for 10 minutes.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">

@@ -1,0 +1,248 @@
+export interface WebsiteCategory {
+  id: string;
+  name: string;
+  description: string;
+  domains: string[];
+  icon: string;
+}
+
+export const WEBSITE_CATEGORIES: WebsiteCategory[] = [
+  {
+    id: "adult",
+    name: "Adult Content",
+    description: "Block adult and pornographic websites",
+    icon: "🔞",
+    domains: [
+      "pornhub.com",
+      "www.pornhub.com",
+      "xvideos.com",
+      "www.xvideos.com",
+      "xnxx.com",
+      "www.xnxx.com",
+      "xhamster.com",
+      "www.xhamster.com",
+      "redtube.com",
+      "www.redtube.com",
+      "youporn.com",
+      "www.youporn.com",
+      "tube8.com",
+      "www.tube8.com",
+      "spankbang.com",
+      "www.spankbang.com",
+      "txxx.com",
+      "www.txxx.com",
+      "porn.com",
+      "www.porn.com",
+      "eporner.com",
+      "www.eporner.com",
+      "hqporner.com",
+      "www.hqporner.com",
+      "onlyfans.com",
+      "www.onlyfans.com",
+    ],
+  },
+  {
+    id: "social",
+    name: "Social Media",
+    description: "Block social networking platforms",
+    icon: "📱",
+    domains: [
+      "facebook.com",
+      "www.facebook.com",
+      "instagram.com",
+      "www.instagram.com",
+      "twitter.com",
+      "www.twitter.com",
+      "x.com",
+      "www.x.com",
+      "tiktok.com",
+      "www.tiktok.com",
+      "snapchat.com",
+      "www.snapchat.com",
+      "reddit.com",
+      "www.reddit.com",
+      "linkedin.com",
+      "www.linkedin.com",
+      "pinterest.com",
+      "www.pinterest.com",
+      "tumblr.com",
+      "www.tumblr.com",
+      "whatsapp.com",
+      "web.whatsapp.com",
+      "discord.com",
+      "www.discord.com",
+      "threads.net",
+      "www.threads.net",
+    ],
+  },
+  {
+    id: "video",
+    name: "Video Streaming",
+    description: "Block video streaming platforms",
+    icon: "📺",
+    domains: [
+      "youtube.com",
+      "www.youtube.com",
+      "m.youtube.com",
+      "netflix.com",
+      "www.netflix.com",
+      "twitch.tv",
+      "www.twitch.tv",
+      "hulu.com",
+      "www.hulu.com",
+      "disneyplus.com",
+      "www.disneyplus.com",
+      "primevideo.com",
+      "www.primevideo.com",
+      "hbomax.com",
+      "www.hbomax.com",
+      "max.com",
+      "www.max.com",
+      "vimeo.com",
+      "www.vimeo.com",
+      "dailymotion.com",
+      "www.dailymotion.com",
+      "crunchyroll.com",
+      "www.crunchyroll.com",
+    ],
+  },
+  {
+    id: "gaming",
+    name: "Gaming",
+    description: "Block gaming and game-related websites",
+    icon: "🎮",
+    domains: [
+      "steam.com",
+      "store.steampowered.com",
+      "steamcommunity.com",
+      "epicgames.com",
+      "www.epicgames.com",
+      "roblox.com",
+      "www.roblox.com",
+      "minecraft.net",
+      "www.minecraft.net",
+      "blizzard.com",
+      "www.blizzard.com",
+      "battle.net",
+      "www.battle.net",
+      "riot.com",
+      "www.riot.com",
+      "leagueoflegends.com",
+      "www.leagueoflegends.com",
+      "valorant.com",
+      "playvalorant.com",
+      "ea.com",
+      "www.ea.com",
+      "origin.com",
+      "www.origin.com",
+      "ubisoft.com",
+      "www.ubisoft.com",
+      "ign.com",
+      "www.ign.com",
+      "gamespot.com",
+      "www.gamespot.com",
+    ],
+  },
+  {
+    id: "shopping",
+    name: "Online Shopping",
+    description: "Block e-commerce and shopping websites",
+    icon: "🛒",
+    domains: [
+      "amazon.com",
+      "www.amazon.com",
+      "ebay.com",
+      "www.ebay.com",
+      "walmart.com",
+      "www.walmart.com",
+      "target.com",
+      "www.target.com",
+      "aliexpress.com",
+      "www.aliexpress.com",
+      "wish.com",
+      "www.wish.com",
+      "etsy.com",
+      "www.etsy.com",
+      "shopify.com",
+      "www.shopify.com",
+      "bestbuy.com",
+      "www.bestbuy.com",
+      "newegg.com",
+      "www.newegg.com",
+    ],
+  },
+  {
+    id: "news",
+    name: "News & Media",
+    description: "Block news websites and media outlets",
+    icon: "📰",
+    domains: [
+      "cnn.com",
+      "www.cnn.com",
+      "bbc.com",
+      "www.bbc.com",
+      "nytimes.com",
+      "www.nytimes.com",
+      "washingtonpost.com",
+      "www.washingtonpost.com",
+      "theguardian.com",
+      "www.theguardian.com",
+      "foxnews.com",
+      "www.foxnews.com",
+      "reuters.com",
+      "www.reuters.com",
+      "apnews.com",
+      "www.apnews.com",
+      "bloomberg.com",
+      "www.bloomberg.com",
+      "wsj.com",
+      "www.wsj.com",
+    ],
+  },
+  {
+    id: "entertainment",
+    name: "Entertainment",
+    description: "Block entertainment and gossip websites",
+    icon: "🎭",
+    domains: [
+      "buzzfeed.com",
+      "www.buzzfeed.com",
+      "tmz.com",
+      "www.tmz.com",
+      "9gag.com",
+      "www.9gag.com",
+      "imgur.com",
+      "www.imgur.com",
+      "giphy.com",
+      "www.giphy.com",
+      "memes.com",
+      "www.memes.com",
+      "knowyourmeme.com",
+      "www.knowyourmeme.com",
+    ],
+  },
+];
+
+// Helper function to get all domains from selected categories
+export function getDomainsFromCategories(categoryIds: string[]): string[] {
+  const domains: string[] = [];
+
+  for (const categoryId of categoryIds) {
+    const category = WEBSITE_CATEGORIES.find((c) => c.id === categoryId);
+    if (category) {
+      domains.push(...category.domains);
+    }
+  }
+
+  return domains;
+}
+
+// Helper function to normalize domain (remove protocol, www variations)
+export function normalizeDomain(domain: string): string {
+  return domain
+    .toLowerCase()
+    .replace(/^https?:\/\//, "") // Remove protocol
+    .replace(/^www\./, "") // Remove www
+    .replace(/\/$/, "") // Remove trailing slash
+    .split("/")[0]; // Keep only domain, remove path
+}

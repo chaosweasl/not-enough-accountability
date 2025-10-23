@@ -5,6 +5,7 @@ const STORAGE_KEYS = {
   BLOCK_RULES: "neu_block_rules",
   WEBSITE_RULES: "neu_website_rules",
   EVENTS: "neu_events",
+  PIN_SESSION: "neu_pin_session",
 } as const;
 
 export const storage = {
@@ -108,5 +109,35 @@ export const storage = {
     Object.values(STORAGE_KEYS).forEach((key) => {
       localStorage.removeItem(key);
     });
+  },
+
+  // PIN Session Management
+  // Session expires after 10 minutes of PIN verification
+  PIN_SESSION_DURATION: 10 * 60 * 1000, // 10 minutes in milliseconds
+
+  setPinSession(): void {
+    const expiresAt = Date.now() + this.PIN_SESSION_DURATION;
+    localStorage.setItem(STORAGE_KEYS.PIN_SESSION, expiresAt.toString());
+  },
+
+  isPinSessionValid(): boolean {
+    const stored = localStorage.getItem(STORAGE_KEYS.PIN_SESSION);
+    if (!stored) return false;
+
+    const expiresAt = parseInt(stored, 10);
+    return Date.now() < expiresAt;
+  },
+
+  clearPinSession(): void {
+    localStorage.removeItem(STORAGE_KEYS.PIN_SESSION);
+  },
+
+  getPinSessionTimeRemaining(): number {
+    const stored = localStorage.getItem(STORAGE_KEYS.PIN_SESSION);
+    if (!stored) return 0;
+
+    const expiresAt = parseInt(stored, 10);
+    const remaining = expiresAt - Date.now();
+    return remaining > 0 ? remaining : 0;
   },
 };

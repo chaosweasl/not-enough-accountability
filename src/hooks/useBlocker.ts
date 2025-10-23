@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { BlockRule } from "@/types";
+import { BlockRule, WebsiteBlockRule } from "@/types";
 import { storage } from "@/lib/storage";
 import { isRuleActive } from "@/lib/helpers";
 
 export function useBlocker() {
   const [rules, setRulesState] = useState<BlockRule[]>([]);
+  const [websiteRules, setWebsiteRulesState] = useState<WebsiteBlockRule[]>([]);
   const [isEnforcing, setIsEnforcing] = useState(false);
 
   // Load rules on mount and when localStorage changes
@@ -13,6 +14,9 @@ export function useBlocker() {
     const loadRules = () => {
       const storedRules = storage.getBlockRules();
       setRulesState(storedRules);
+
+      const storedWebsiteRules = storage.getWebsiteRules();
+      setWebsiteRulesState(storedWebsiteRules);
     };
 
     // Load initial rules
@@ -21,7 +25,11 @@ export function useBlocker() {
     // Listen for storage changes from other tabs/windows
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === "neu_block_rules") {
-        loadRules();
+        const storedRules = storage.getBlockRules();
+        setRulesState(storedRules);
+      } else if (e.key === "neu_website_rules") {
+        const storedWebsiteRules = storage.getWebsiteRules();
+        setWebsiteRulesState(storedWebsiteRules);
       }
     };
 
@@ -65,6 +73,46 @@ export function useBlocker() {
       );
     },
     [setRules]
+  );
+
+  // Website rule management
+  const setWebsiteRules = useCallback(
+    (
+      newRules:
+        | WebsiteBlockRule[]
+        | ((prev: WebsiteBlockRule[]) => WebsiteBlockRule[])
+    ) => {
+      setWebsiteRulesState((prev) => {
+        const updated =
+          typeof newRules === "function" ? newRules(prev) : newRules;
+        storage.saveWebsiteRules(updated);
+        return updated;
+      });
+    },
+    []
+  );
+
+  const addWebsiteRule = useCallback(
+    (rule: WebsiteBlockRule) => {
+      setWebsiteRules((prev) => [...prev, rule]);
+    },
+    [setWebsiteRules]
+  );
+
+  const removeWebsiteRule = useCallback(
+    (ruleId: string) => {
+      setWebsiteRules((prev) => prev.filter((r) => r.id !== ruleId));
+    },
+    [setWebsiteRules]
+  );
+
+  const updateWebsiteRule = useCallback(
+    (ruleId: string, updates: Partial<WebsiteBlockRule>) => {
+      setWebsiteRules((prev) =>
+        prev.map((r) => (r.id === ruleId ? { ...r, ...updates } : r))
+      );
+    },
+    [setWebsiteRules]
   );
 
   // Enforcement loop
@@ -158,6 +206,11 @@ export function useBlocker() {
     addRule,
     removeRule,
     updateRule,
+    websiteRules,
+    setWebsiteRules,
+    addWebsiteRule,
+    removeWebsiteRule,
+    updateWebsiteRule,
     isEnforcing,
     setIsEnforcing,
   };
