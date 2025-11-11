@@ -52,6 +52,7 @@ export interface AppSettings {
   sendKillswitchNotifications: boolean;
   isSetupComplete: boolean;
   blockingEnabled: boolean;
+  websiteBlockingEnabled: boolean;
 }
 
 export interface BlockEvent {

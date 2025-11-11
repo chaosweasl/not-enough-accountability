@@ -1,6 +1,13 @@
 import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { Power, PowerOff, Plus, AlertTriangle, Globe } from "lucide-react";
+import {
+  Power,
+  PowerOff,
+  Plus,
+  AlertTriangle,
+  Globe,
+  Activity,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -15,6 +22,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useSettings } from "@/hooks/useSettings";
 import { useBlockerContext } from "@/contexts/BlockerContext";
+import { useBlockingStatus } from "@/hooks/useBlockingStatus";
 import { isRuleActive } from "@/lib/helpers";
 import { storage } from "@/lib/storage";
 import BlockRuleDialog from "./BlockRuleDialog";
@@ -23,6 +31,7 @@ import PinDialog from "./PinDialog";
 import KillswitchDialog from "./KillswitchDialog";
 import BlockRuleCard from "./BlockRuleCard";
 import WebsiteRuleCard from "./WebsiteRuleCard";
+import EventsTab from "./EventsTab";
 
 export default function Dashboard() {
   const { settings, updateSettings } = useSettings();
@@ -34,7 +43,14 @@ export default function Dashboard() {
     removeWebsiteRule,
     updateRule,
     updateWebsiteRule,
+    cleanupExpiredTimers,
+    cleanupExpiredWebsiteTimers,
   } = useBlockerContext();
+  const blockingStatus = useBlockingStatus(
+    rules,
+    websiteRules,
+    settings.blockingEnabled
+  );
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showAddWebsiteDialog, setShowAddWebsiteDialog] = useState(false);
   const [showPinDialog, setShowPinDialog] = useState(false);
@@ -188,6 +204,19 @@ export default function Dashboard() {
     }
   };
 
+  const handleCleanupExpiredTimers = () => {
+    const appCount = cleanupExpiredTimers();
+    const websiteCount = cleanupExpiredWebsiteTimers();
+    const totalCount = appCount + websiteCount;
+
+    if (totalCount > 0) {
+      console.log(`Cleaned up ${totalCount} expired timer rule(s)`);
+      // Optionally show a toast notification here
+    } else {
+      console.log("No expired timer rules to clean up");
+    }
+  };
+
   useEffect(() => {
     if (settings.blockingEnabled) {
       setIsEnforcing(true);
@@ -247,6 +276,69 @@ export default function Dashboard() {
         </CardHeader>
       </Card>
 
+      {/* Currently Blocking Status */}
+      {settings.blockingEnabled && blockingStatus.totalBlocked > 0 && (
+        <Card className="border-warning/50 bg-warning/5">
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <Activity className="h-5 w-5 text-warning animate-pulse" />
+              <div>
+                <CardTitle className="text-lg">Currently Blocking</CardTitle>
+                <CardDescription>
+                  {blockingStatus.totalBlocked} process
+                  {blockingStatus.totalBlocked !== 1 ? "es" : ""} blocked right
+                  now
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {blockingStatus.blockedApps.length > 0 && (
+              <div>
+                <div className="text-sm font-medium mb-2">
+                  Applications ({blockingStatus.blockedApps.length}):
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {blockingStatus.blockedApps.map((app, idx) => (
+                    <Badge key={idx} variant="destructive">
+                      {app.name}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+            {blockingStatus.blockedBrowsers.length > 0 && (
+              <div>
+                <div className="text-sm font-medium mb-2">
+                  Browsers ({blockingStatus.blockedBrowsers.length}):
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {blockingStatus.blockedBrowsers.map((browser, idx) => (
+                    <Badge key={idx} variant="destructive">
+                      {browser.name}
+                    </Badge>
+                  ))}
+                </div>
+                <div className="text-xs text-muted-foreground mt-2">
+                  Due to:{" "}
+                  {blockingStatus.blockedBrowsers[0]?.domains
+                    .slice(0, 3)
+                    .join(", ")}
+                  {blockingStatus.blockedBrowsers[0]?.domains.length > 3 && (
+                    <span>
+                      {" "}
+                      +{blockingStatus.blockedBrowsers[0].domains.length -
+                        3}{" "}
+                      more
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       {/* Actions */}
       <div className="flex items-center justify-between">
         <div>
@@ -256,6 +348,13 @@ export default function Dashboard() {
           </p>
         </div>
         <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={handleCleanupExpiredTimers}
+            size="sm"
+          >
+            Clean Expired
+          </Button>
           <Button
             variant="outline"
             onClick={() => setShowKillswitch(true)}
@@ -274,6 +373,7 @@ export default function Dashboard() {
           <TabsTrigger value="websites">
             Websites ({websiteRules.length})
           </TabsTrigger>
+          <TabsTrigger value="events">Events</TabsTrigger>
         </TabsList>
 
         <TabsContent value="apps" className="space-y-4">
@@ -359,6 +459,10 @@ export default function Dashboard() {
               ))}
             </div>
           )}
+        </TabsContent>
+
+        <TabsContent value="events" className="space-y-4">
+          <EventsTab />
         </TabsContent>
       </Tabs>
 

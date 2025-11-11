@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { Save, Key, Webhook, Bell } from "lucide-react";
+import { Save, Key, Webhook, Bell, Globe } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -246,6 +246,56 @@ export default function Settings() {
                 </div>
               </div>
             )}
+          </CardContent>
+        </Card>
+
+        {/* Website Blocking Settings */}
+        <Card className="border-2 hover:shadow-xl transition-all duration-300 hover:border-primary/30">
+          <CardHeader className="pb-6">
+            <div className="flex items-center gap-4">
+              <div className="relative">
+                <div className="absolute inset-0 gradient-primary blur-xl opacity-20"></div>
+                <div className="relative p-3 rounded-xl gradient-primary shadow-lg">
+                  <Globe className="h-6 w-6 text-white" />
+                </div>
+              </div>
+              <div>
+                <CardTitle className="text-2xl font-bold">
+                  Website Blocking
+                </CardTitle>
+                <CardDescription className="text-base mt-1">
+                  Enable or disable browser-level website blocking
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between p-5 rounded-xl border-2 bg-gradient-to-br from-muted/20 to-background shadow-sm hover:shadow-md transition-shadow duration-200">
+              <div className="space-y-1">
+                <Label className="text-base font-semibold">
+                  Enable Website Blocking
+                </Label>
+                <p className="text-sm text-muted-foreground">
+                  When enabled, browsers will be closed when website rules are
+                  active
+                </p>
+              </div>
+              <Switch
+                checked={settings.websiteBlockingEnabled}
+                onCheckedChange={(checked) =>
+                  updateSettings({ websiteBlockingEnabled: checked })
+                }
+                className="scale-125 shadow-md"
+              />
+            </div>
+            <div className="rounded-lg p-4 bg-blue-500/10 border-2 border-blue-500/20">
+              <p className="text-sm text-blue-700 dark:text-blue-300">
+                ℹ️ Website blocking works by terminating browser processes when
+                active rules match. This is more effective than hosts file
+                blocking because modern browsers bypass the hosts file using DNS
+                over HTTPS.
+              </p>
+            </div>
           </CardContent>
         </Card>
 

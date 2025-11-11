@@ -11,6 +11,7 @@ interface BlockerContextType {
   addRule: (rule: BlockRule) => void;
   removeRule: (ruleId: string) => void;
   updateRule: (ruleId: string, updates: Partial<BlockRule>) => void;
+  cleanupExpiredTimers: () => number;
 
   websiteRules: WebsiteBlockRule[];
   setWebsiteRules: (
@@ -24,6 +25,7 @@ interface BlockerContextType {
     ruleId: string,
     updates: Partial<WebsiteBlockRule>
   ) => void;
+  cleanupExpiredWebsiteTimers: () => number;
 
   isEnforcing: boolean;
   setIsEnforcing: (enforcing: boolean) => void;

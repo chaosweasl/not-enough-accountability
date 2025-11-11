@@ -34,7 +34,14 @@ export function isRuleActive(rule: BlockRule | WebsiteBlockRule): boolean {
       const startMinutes = rule.startHour * 60 + rule.startMinute;
       const endMinutes = rule.endHour * 60 + rule.endMinute;
 
-      return currentMinutes >= startMinutes && currentMinutes <= endMinutes;
+      // Handle overnight schedules (e.g., 10PM to 6AM)
+      if (endMinutes < startMinutes) {
+        // Overnight: active if EITHER after start OR before end
+        return currentMinutes >= startMinutes || currentMinutes <= endMinutes;
+      } else {
+        // Normal same-day schedule: active if between start and end
+        return currentMinutes >= startMinutes && currentMinutes <= endMinutes;
+      }
     }
   }
 
@@ -63,10 +70,28 @@ export function formatTimeRange(
     return `${displayHour}:${displayMinute} ${period}`;
   };
 
-  return `${formatTime(startHour, startMinute)} - ${formatTime(
-    endHour,
-    endMinute
-  )}`;
+  const startTime = formatTime(startHour, startMinute);
+  const endTime = formatTime(endHour, endMinute);
+
+  // Check if this is an overnight schedule
+  const startMinutes = startHour * 60 + startMinute;
+  const endMinutes = endHour * 60 + endMinute;
+  const isOvernight = endMinutes < startMinutes;
+
+  return isOvernight
+    ? `${startTime} - ${endTime} (overnight)`
+    : `${startTime} - ${endTime}`;
+}
+
+export function isOvernightSchedule(
+  startHour: number,
+  startMinute: number,
+  endHour: number,
+  endMinute: number
+): boolean {
+  const startMinutes = startHour * 60 + startMinute;
+  const endMinutes = endHour * 60 + endMinute;
+  return endMinutes < startMinutes;
 }
 
 export function getDayName(day: number): string {

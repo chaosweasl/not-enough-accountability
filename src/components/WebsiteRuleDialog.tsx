@@ -17,7 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { useBlockerContext } from "@/contexts/BlockerContext";
 import { useSettings } from "@/hooks/useSettings";
 import { WebsiteBlockRule } from "@/types";
-import { generateId } from "@/lib/helpers";
+import { generateId, isOvernightSchedule } from "@/lib/helpers";
 import { WEBSITE_CATEGORIES, normalizeDomain } from "@/lib/websiteCategories";
 
 interface WebsiteRuleDialogProps {
@@ -29,7 +29,7 @@ export default function WebsiteRuleDialog({
   open,
   onOpenChange,
 }: WebsiteRuleDialogProps) {
-  const { addWebsiteRule } = useBlockerContext();
+  const { addWebsiteRule, websiteRules } = useBlockerContext();
   const { settings } = useSettings();
 
   const [step, setStep] = useState<"select" | "configure">("select");
@@ -47,6 +47,16 @@ export default function WebsiteRuleDialog({
   const [startMinute, setStartMinute] = useState("0");
   const [endHour, setEndHour] = useState("17");
   const [endMinute, setEndMinute] = useState("0");
+
+  // Calculate if schedule is overnight
+  const isOvernight =
+    ruleType === "schedule" &&
+    isOvernightSchedule(
+      parseInt(startHour) || 0,
+      parseInt(startMinute) || 0,
+      parseInt(endHour) || 0,
+      parseInt(endMinute) || 0
+    );
 
   const handleClose = () => {
     setStep("select");
@@ -109,8 +119,37 @@ export default function WebsiteRuleDialog({
     // Remove duplicates
     const uniqueDomains = Array.from(new Set(domains));
 
-    // Create a rule for each domain
-    for (const domain of uniqueDomains) {
+    // Check for existing rules and filter out duplicates
+    const existingDomains = new Set(
+      websiteRules.map((r) => r.domain.toLowerCase())
+    );
+    const newDomains = uniqueDomains.filter(
+      (d) => !existingDomains.has(d.toLowerCase())
+    );
+    const duplicateDomains = uniqueDomains.filter((d) =>
+      existingDomains.has(d.toLowerCase())
+    );
+
+    // Alert if there are duplicates
+    if (duplicateDomains.length > 0) {
+      const duplicateList = duplicateDomains.slice(0, 5).join(", ");
+      const moreCount =
+        duplicateDomains.length > 5
+          ? ` (+${duplicateDomains.length - 5} more)`
+          : "";
+      alert(
+        `Some websites already have blocking rules and will be skipped:\n\n${duplicateList}${moreCount}\n\nOnly new websites will be added.`
+      );
+    }
+
+    // If all domains are duplicates, don't proceed
+    if (newDomains.length === 0) {
+      alert("All selected websites already have blocking rules.");
+      return;
+    }
+
+    // Create a rule for each new domain
+    for (const domain of newDomains) {
       const rule: WebsiteBlockRule = {
         id: generateId(),
         domain,
@@ -411,6 +450,17 @@ export default function WebsiteRuleDialog({
                     </div>
                   </div>
                 </div>
+
+                {/* Overnight schedule indicator */}
+                {isOvernight && (
+                  <div className="rounded-lg bg-amber-500/10 border border-amber-500/30 p-3 mt-4">
+                    <p className="text-sm text-amber-700 dark:text-amber-400 font-medium">
+                      🌙 Overnight schedule: Active from {startHour}:
+                      {startMinute.padStart(2, "0")} until {endHour}:
+                      {endMinute.padStart(2, "0")} the next day
+                    </p>
+                  </div>
+                )}
               </TabsContent>
             </Tabs>
 

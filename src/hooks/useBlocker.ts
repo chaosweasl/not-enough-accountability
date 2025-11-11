@@ -115,6 +115,50 @@ export function useBlocker() {
     [setWebsiteRules]
   );
 
+  // Cleanup expired timer rules
+  const cleanupExpiredTimers = useCallback(() => {
+    const now = Date.now();
+    let removedCount = 0;
+
+    setRules((prev) => {
+      const filtered = prev.filter((rule) => {
+        if (rule.type === "timer" && rule.startTime && rule.duration) {
+          const endTime = rule.startTime + rule.duration * 60 * 1000;
+          if (now > endTime) {
+            removedCount++;
+            return false; // Remove expired timer
+          }
+        }
+        return true; // Keep all other rules
+      });
+      return filtered;
+    });
+
+    return removedCount;
+  }, [setRules]);
+
+  // Cleanup expired website timer rules
+  const cleanupExpiredWebsiteTimers = useCallback(() => {
+    const now = Date.now();
+    let removedCount = 0;
+
+    setWebsiteRules((prev) => {
+      const filtered = prev.filter((rule) => {
+        if (rule.type === "timer" && rule.startTime && rule.duration) {
+          const endTime = rule.startTime + rule.duration * 60 * 1000;
+          if (now > endTime) {
+            removedCount++;
+            return false; // Remove expired timer
+          }
+        }
+        return true; // Keep all other rules
+      });
+      return filtered;
+    });
+
+    return removedCount;
+  }, [setWebsiteRules]);
+
   // Enforcement loop
   useEffect(() => {
     if (!isEnforcing) return;
@@ -206,11 +250,13 @@ export function useBlocker() {
     addRule,
     removeRule,
     updateRule,
+    cleanupExpiredTimers,
     websiteRules,
     setWebsiteRules,
     addWebsiteRule,
     removeWebsiteRule,
     updateWebsiteRule,
+    cleanupExpiredWebsiteTimers,
     isEnforcing,
     setIsEnforcing,
   };

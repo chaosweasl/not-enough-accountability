@@ -20,8 +20,45 @@ pub struct WebhookMessage {
 // State to track blocked apps
 pub struct BlockedApps(Arc<Mutex<HashMap<String, bool>>>);
 
-#[tauri::command]
-async fn get_running_processes() -> Result<Vec<AppInfo>, String> {
+// State to track webhook rate limiting (webhook_url -> last_send_timestamp)
+pub struct WebhookRateLimiter(Arc<Mutex<HashMap<String, std::time::Instant>>>);
+
+// Process cache to avoid redundant scans
+pub struct ProcessCache {
+    cache: Arc<Mutex<Option<(Vec<AppInfo>, std::time::Instant)>>>,
+    ttl: std::time::Duration,
+}
+
+impl ProcessCache {
+    fn new(ttl_seconds: u64) -> Self {
+        Self {
+            cache: Arc::new(Mutex::new(None)),
+            ttl: std::time::Duration::from_secs(ttl_seconds),
+        }
+    }
+    
+    fn get_or_refresh(&self) -> Result<Vec<AppInfo>, String> {
+        use std::time::Instant;
+        
+        let mut cache = self.cache.lock().unwrap();
+        let now = Instant::now();
+        
+        // Check if cache is valid
+        if let Some((cached_processes, cached_time)) = cache.as_ref() {
+            if now.duration_since(*cached_time) < self.ttl {
+                return Ok(cached_processes.clone());
+            }
+        }
+        
+        // Cache expired or doesn't exist, refresh
+        let processes = fetch_running_processes()?;
+        *cache = Some((processes.clone(), now));
+        Ok(processes)
+    }
+}
+
+// Extract the actual process fetching logic
+fn fetch_running_processes() -> Result<Vec<AppInfo>, String> {
     let mut sys = System::new_all();
     sys.refresh_processes_specifics(
         ProcessesToUpdate::All,
@@ -59,6 +96,11 @@ async fn get_running_processes() -> Result<Vec<AppInfo>, String> {
     apps.dedup_by(|a, b| a.path.to_lowercase() == b.path.to_lowercase());
     
     Ok(apps)
+}
+
+#[tauri::command]
+async fn get_running_processes(cache: State<'_, ProcessCache>) -> Result<Vec<AppInfo>, String> {
+    cache.get_or_refresh()
 }
 
 // Helper function to scan a directory for executables (non-recursive for performance)
@@ -474,7 +516,35 @@ async fn get_blocked_apps(blocked_apps: State<'_, BlockedApps>) -> Result<Vec<St
 }
 
 #[tauri::command]
-async fn send_discord_webhook(webhook_url: String, message: String) -> Result<bool, String> {
+async fn send_discord_webhook(
+    webhook_url: String,
+    message: String,
+    rate_limiter: State<'_, WebhookRateLimiter>,
+) -> Result<bool, String> {
+    use std::time::{Duration, Instant};
+    
+    const MIN_INTERVAL: Duration = Duration::from_secs(5); // 5 seconds between webhooks
+    
+    // Check rate limit
+    {
+        let mut limiter = rate_limiter.0.lock().unwrap();
+        let now = Instant::now();
+        
+        if let Some(last_send) = limiter.get(&webhook_url) {
+            let elapsed = now.duration_since(*last_send);
+            if elapsed < MIN_INTERVAL {
+                let remaining = MIN_INTERVAL - elapsed;
+                return Err(format!(
+                    "Rate limit: Please wait {} seconds before sending another webhook",
+                    remaining.as_secs()
+                ));
+            }
+        }
+        
+        // Update last send time
+        limiter.insert(webhook_url.clone(), now);
+    }
+    
     let client = reqwest::Client::new();
     let webhook_message = WebhookMessage { content: message };
     
@@ -506,6 +576,14 @@ async fn get_browser_processes() -> Result<Vec<AppInfo>, String> {
         "brave.exe",
         "vivaldi.exe",
         "safari",
+        "chromium",
+        "iexplore.exe",      // Internet Explorer
+        "microsoftedge.exe", // Old Edge
+        "waterfox.exe",      // Waterfox
+        "palemoon.exe",      // Pale Moon
+        "arc.exe",           // Arc Browser
+        "torch.exe",         // Torch Browser
+        "yandex.exe",        // Yandex Browser
     ];
     
     let mut sys = System::new_all();
@@ -538,15 +616,40 @@ async fn get_browser_processes() -> Result<Vec<AppInfo>, String> {
 
 #[tauri::command]
 fn verify_pin(stored_hash: String, input_pin: String) -> Result<bool, String> {
-    // Simple hash comparison (in production, use proper password hashing like argon2)
-    let input_hash = format!("{:x}", md5::compute(input_pin.as_bytes()));
-    Ok(input_hash == stored_hash)
+    use argon2::{Argon2, PasswordHash, PasswordVerifier};
+    
+    // Check if this is an old MD5 hash (32 hex characters)
+    if stored_hash.len() == 32 && stored_hash.chars().all(|c| c.is_ascii_hexdigit()) {
+        // Legacy MD5 verification for backward compatibility
+        let input_hash = format!("{:x}", md5::compute(input_pin.as_bytes()));
+        return Ok(input_hash == stored_hash);
+    }
+    
+    // New Argon2 verification
+    let parsed_hash = PasswordHash::new(&stored_hash)
+        .map_err(|e| format!("Invalid password hash: {}", e))?;
+    
+    Ok(Argon2::default()
+        .verify_password(input_pin.as_bytes(), &parsed_hash)
+        .is_ok())
 }
 
 #[tauri::command]
 fn hash_pin(pin: String) -> Result<String, String> {
-    let hash = format!("{:x}", md5::compute(pin.as_bytes()));
-    Ok(hash)
+    use argon2::{
+        password_hash::{PasswordHasher, SaltString},
+        Argon2,
+    };
+    use rand_core::OsRng;
+    
+    let salt = SaltString::generate(&mut OsRng);
+    let argon2 = Argon2::default();
+    
+    let password_hash = argon2
+        .hash_password(pin.as_bytes(), &salt)
+        .map_err(|e| format!("Failed to hash password: {}", e))?;
+    
+    Ok(password_hash.to_string())
 }
 
 // Website blocking via hosts file modification
@@ -696,6 +799,8 @@ pub fn run() {
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_dialog::init())
         .manage(BlockedApps(Arc::new(Mutex::new(HashMap::new()))))
+        .manage(WebhookRateLimiter(Arc::new(Mutex::new(HashMap::new()))))
+        .manage(ProcessCache::new(2)) // 2-second TTL for process cache
         .setup(|app| {
             // Create system tray
             let quit = MenuItem::with_id(app, "quit", "Quit NEU", true, None::<&str>)?;

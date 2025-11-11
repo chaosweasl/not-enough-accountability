@@ -20,9 +20,15 @@ export const storage = {
         sendKillswitchNotifications: true,
         isSetupComplete: false,
         blockingEnabled: false,
+        websiteBlockingEnabled: true, // Enabled by default
       };
     }
-    return JSON.parse(stored);
+    const parsed = JSON.parse(stored);
+    // Add websiteBlockingEnabled default for existing users
+    if (parsed.websiteBlockingEnabled === undefined) {
+      parsed.websiteBlockingEnabled = true;
+    }
+    return parsed;
   },
 
   saveSettings(settings: AppSettings): void {
@@ -103,6 +109,10 @@ export const storage = {
       events.splice(100);
     }
     this.saveEvents(events);
+  },
+
+  clearEvents(): void {
+    localStorage.removeItem(STORAGE_KEYS.EVENTS);
   },
 
   clearAllData(): void {

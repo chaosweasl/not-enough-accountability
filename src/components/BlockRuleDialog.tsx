@@ -15,7 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useBlockerContext } from "@/contexts/BlockerContext";
 import { useSettings } from "@/hooks/useSettings";
 import { AppInfo, BlockRule } from "@/types";
-import { generateId } from "@/lib/helpers";
+import { generateId, isOvernightSchedule } from "@/lib/helpers";
 import { storage } from "@/lib/storage";
 
 interface BlockRuleDialogProps {
@@ -27,7 +27,7 @@ export default function BlockRuleDialog({
   open,
   onOpenChange,
 }: BlockRuleDialogProps) {
-  const { addRule } = useBlockerContext();
+  const { addRule, rules } = useBlockerContext();
   const { settings } = useSettings();
   const [apps, setApps] = useState<AppInfo[]>([]);
   const [loading, setLoading] = useState(false);
@@ -44,6 +44,16 @@ export default function BlockRuleDialog({
   const [startMinute, setStartMinute] = useState("0");
   const [endHour, setEndHour] = useState("17");
   const [endMinute, setEndMinute] = useState("0");
+
+  // Calculate if schedule is overnight
+  const isOvernight =
+    ruleType === "schedule" &&
+    isOvernightSchedule(
+      parseInt(startHour) || 0,
+      parseInt(startMinute) || 0,
+      parseInt(endHour) || 0,
+      parseInt(endMinute) || 0
+    );
 
   useEffect(() => {
     if (open) {
@@ -104,6 +114,20 @@ export default function BlockRuleDialog({
 
   const handleAddRule = async () => {
     if (!selectedApp) return;
+
+    // Check for duplicate rules with the same app path
+    const normalizedPath = selectedApp.path.toLowerCase().replace(/\\/g, "/");
+    const existingRule = rules.find(
+      (r) => r.appPath.toLowerCase().replace(/\\/g, "/") === normalizedPath
+    );
+
+    if (existingRule) {
+      // Alert user and don't add duplicate
+      alert(
+        `A blocking rule already exists for ${selectedApp.name}.\n\nYou can edit or remove the existing rule instead of creating a duplicate.`
+      );
+      return;
+    }
 
     const rule: BlockRule = {
       id: generateId(),
@@ -475,6 +499,19 @@ export default function BlockRuleDialog({
                             </div>
                           </div>
                         </div>
+
+                        {/* Overnight schedule indicator */}
+                        {isOvernight && (
+                          <div className="rounded-lg bg-amber-500/10 border border-amber-500/30 p-4">
+                            <p className="text-base text-amber-700 dark:text-amber-400 font-medium">
+                              🌙 Overnight schedule detected: This rule will be
+                              active from {startHour}:
+                              {startMinute.padStart(2, "0")} until {endHour}:
+                              {endMinute.padStart(2, "0")} the next day
+                            </p>
+                          </div>
+                        )}
+
                         <p className="text-base text-muted-foreground">
                           📅 Block will be active during the specified time on
                           selected days
