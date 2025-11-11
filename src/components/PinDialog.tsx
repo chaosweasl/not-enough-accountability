@@ -81,13 +81,27 @@ export default function PinDialog({
             <Input
               id="pin-input"
               type="password"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              maxLength={6}
               value={pin}
-              onChange={(e) => setPin(e.target.value)}
-              placeholder="Enter PIN"
+              onChange={(e) => {
+                // Only allow numeric input
+                const value = e.target.value.replace(/\D/g, "");
+                setPin(value);
+              }}
+              placeholder="Enter PIN (numbers only)"
               autoFocus
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   handleVerify();
+                }
+                // Prevent non-numeric keys (except special keys like Backspace, Delete, etc.)
+                if (
+                  !/[0-9]/.test(e.key) &&
+                  !["Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab"].includes(e.key)
+                ) {
+                  e.preventDefault();
                 }
               }}
             />

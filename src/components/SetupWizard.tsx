@@ -99,11 +99,26 @@ export default function SetupWizard() {
                 <Input
                   id="pin"
                   type="password"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  maxLength={6}
                   value={pin}
-                  onChange={(e) => setPin(e.target.value)}
-                  placeholder="Enter 4+ digit PIN"
-                  maxLength={8}
+                  onChange={(e) => {
+                    // Only allow numeric input
+                    const value = e.target.value.replace(/\D/g, "");
+                    setPin(value);
+                  }}
+                  placeholder="Enter 4-6 digit PIN (numbers only)"
                   className="h-11"
+                  onKeyDown={(e) => {
+                    // Prevent non-numeric keys (except special keys)
+                    if (
+                      !/[0-9]/.test(e.key) &&
+                      !["Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab"].includes(e.key)
+                    ) {
+                      e.preventDefault();
+                    }
+                  }}
                 />
               </div>
               <div className="space-y-2">
@@ -113,11 +128,26 @@ export default function SetupWizard() {
                 <Input
                   id="confirmPin"
                   type="password"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  maxLength={6}
                   value={confirmPin}
-                  onChange={(e) => setConfirmPin(e.target.value)}
-                  placeholder="Re-enter PIN"
-                  maxLength={8}
+                  onChange={(e) => {
+                    // Only allow numeric input
+                    const value = e.target.value.replace(/\D/g, "");
+                    setConfirmPin(value);
+                  }}
+                  placeholder="Re-enter PIN (numbers only)"
                   className="h-11"
+                  onKeyDown={(e) => {
+                    // Prevent non-numeric keys (except special keys)
+                    if (
+                      !/[0-9]/.test(e.key) &&
+                      !["Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab"].includes(e.key)
+                    ) {
+                      e.preventDefault();
+                    }
+                  }}
                 />
               </div>
               {error && (

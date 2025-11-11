@@ -163,7 +163,14 @@ export function useBlocker() {
   useEffect(() => {
     if (!isEnforcing) return;
 
+    // Rate limiting: max processes to kill per interval
+    const MAX_KILLS_PER_INTERVAL = 50;
+    let killCountThisInterval = 0;
+
     const interval = setInterval(async () => {
+      // Reset kill counter for new interval
+      killCountThisInterval = 0;
+
       const activeRules = rules.filter(isRuleActive);
 
       if (activeRules.length === 0) return;
@@ -172,6 +179,14 @@ export function useBlocker() {
         const processes = await invoke<any[]>("get_running_processes");
 
         for (const rule of activeRules) {
+          // Check if we've hit the rate limit
+          if (killCountThisInterval >= MAX_KILLS_PER_INTERVAL) {
+            console.warn(
+              `Rate limit reached: ${MAX_KILLS_PER_INTERVAL} processes killed this interval. Skipping remaining processes.`
+            );
+            break;
+          }
+
           // Improved matching logic:
           // 1. Compare normalized executable paths directly for exact matches
           // 2. As fallback, check if process name matches app name (for running processes without full path)
@@ -224,11 +239,20 @@ export function useBlocker() {
           });
 
           for (const process of matchingProcesses) {
+            // Check rate limit before each kill
+            if (killCountThisInterval >= MAX_KILLS_PER_INTERVAL) {
+              console.warn(
+                `Rate limit reached during rule processing. Stopping at ${killCountThisInterval} kills.`
+              );
+              break;
+            }
+
             if (process.pid) {
               try {
                 await invoke("kill_process", { pid: process.pid });
+                killCountThisInterval++;
                 console.log(
-                  `Blocked and killed: ${process.name} (PID: ${process.pid}) - matched rule: ${rule.appName}`
+                  `Blocked and killed: ${process.name} (PID: ${process.pid}) - matched rule: ${rule.appName} [${killCountThisInterval}/${MAX_KILLS_PER_INTERVAL}]`
                 );
               } catch (error) {
                 console.error(`Failed to kill process ${process.pid}:`, error);

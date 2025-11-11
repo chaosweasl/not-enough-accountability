@@ -8,6 +8,42 @@ const STORAGE_KEYS = {
   PIN_SESSION: "neu_pin_session",
 } as const;
 
+// Helper to safely write to localStorage with quota handling
+function safeSetItem(key: string, value: string): void {
+  try {
+    localStorage.setItem(key, value);
+  } catch (error) {
+    if (error instanceof DOMException && 
+        (error.name === 'QuotaExceededError' || 
+         error.name === 'NS_ERROR_DOM_QUOTA_REACHED')) {
+      // Storage quota exceeded
+      console.error('LocalStorage quota exceeded for key:', key);
+      
+      // If it's events, automatically clean up old events
+      if (key === STORAGE_KEYS.EVENTS) {
+        console.log('Auto-cleaning old events due to quota limit...');
+        const events: BlockEvent[] = JSON.parse(value);
+        // Keep only last 100 events
+        const trimmedEvents = events.slice(-100);
+        try {
+          localStorage.setItem(key, JSON.stringify(trimmedEvents));
+          console.log(`Trimmed events from ${events.length} to ${trimmedEvents.length}`);
+          return;
+        } catch (retryError) {
+          console.error('Failed to save even after trimming:', retryError);
+        }
+      }
+      
+      // Throw a user-friendly error
+      throw new Error(
+        'Storage limit exceeded. Please export your data and clear old events in the Events tab.'
+      );
+    }
+    // Re-throw other errors
+    throw error;
+  }
+}
+
 export const storage = {
   // Settings
   getSettings(): AppSettings {
@@ -32,7 +68,7 @@ export const storage = {
   },
 
   saveSettings(settings: AppSettings): void {
-    localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(settings));
+    safeSetItem(STORAGE_KEYS.SETTINGS, JSON.stringify(settings));
   },
 
   // Block Rules
@@ -42,7 +78,7 @@ export const storage = {
   },
 
   saveBlockRules(rules: BlockRule[]): void {
-    localStorage.setItem(STORAGE_KEYS.BLOCK_RULES, JSON.stringify(rules));
+    safeSetItem(STORAGE_KEYS.BLOCK_RULES, JSON.stringify(rules));
   },
 
   addBlockRule(rule: BlockRule): void {
@@ -70,7 +106,7 @@ export const storage = {
   },
 
   saveWebsiteRules(rules: WebsiteBlockRule[]): void {
-    localStorage.setItem(STORAGE_KEYS.WEBSITE_RULES, JSON.stringify(rules));
+    safeSetItem(STORAGE_KEYS.WEBSITE_RULES, JSON.stringify(rules));
   },
 
   addWebsiteRule(rule: WebsiteBlockRule): void {
@@ -98,7 +134,7 @@ export const storage = {
   },
 
   saveEvents(events: BlockEvent[]): void {
-    localStorage.setItem(STORAGE_KEYS.EVENTS, JSON.stringify(events));
+    safeSetItem(STORAGE_KEYS.EVENTS, JSON.stringify(events));
   },
 
   addEvent(event: BlockEvent): void {

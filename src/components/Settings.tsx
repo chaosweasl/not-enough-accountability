@@ -29,8 +29,24 @@ export default function Settings() {
   const [newPin, setNewPin] = useState("");
   const [confirmNewPin, setConfirmNewPin] = useState("");
   const [pinError, setPinError] = useState("");
+  const [webhookError, setWebhookError] = useState("");
+
+  const validateWebhookUrl = (url: string): boolean => {
+    if (!url) return false;
+    
+    // Discord webhook URL format validation
+    const discordWebhookPattern = /^https:\/\/(canary\.|ptb\.)?discord(?:app)?\.com\/api\/webhooks\/\d+\/[\w-]+$/i;
+    return discordWebhookPattern.test(url);
+  };
 
   const handleSaveWebhook = () => {
+    if (!validateWebhookUrl(webhookUrl)) {
+      setWebhookError(
+        "Invalid Discord webhook URL. Expected format: https://discord.com/api/webhooks/..."
+      );
+      return;
+    }
+    setWebhookError("");
     updateSettings({ webhookUrl });
   };
 
@@ -192,11 +208,26 @@ export default function Settings() {
                   <Input
                     id="new-pin"
                     type="password"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    maxLength={6}
                     value={newPin}
-                    onChange={(e) => setNewPin(e.target.value)}
-                    placeholder="Enter new PIN"
-                    maxLength={8}
+                    onChange={(e) => {
+                      // Only allow numeric input
+                      const value = e.target.value.replace(/\D/g, "");
+                      setNewPin(value);
+                    }}
+                    placeholder="Enter new PIN (numbers only)"
                     className="h-12 border-2 focus:ring-2 focus:ring-primary/20"
+                    onKeyDown={(e) => {
+                      // Prevent non-numeric keys (except special keys)
+                      if (
+                        !/[0-9]/.test(e.key) &&
+                        !["Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab"].includes(e.key)
+                      ) {
+                        e.preventDefault();
+                      }
+                    }}
                   />
                 </div>
                 <div className="space-y-2">
@@ -209,11 +240,26 @@ export default function Settings() {
                   <Input
                     id="confirm-new-pin"
                     type="password"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    maxLength={6}
                     value={confirmNewPin}
-                    onChange={(e) => setConfirmNewPin(e.target.value)}
-                    placeholder="Re-enter new PIN"
-                    maxLength={8}
+                    onChange={(e) => {
+                      // Only allow numeric input
+                      const value = e.target.value.replace(/\D/g, "");
+                      setConfirmNewPin(value);
+                    }}
+                    placeholder="Re-enter new PIN (numbers only)"
                     className="h-12 border-2 focus:ring-2 focus:ring-primary/20"
+                    onKeyDown={(e) => {
+                      // Prevent non-numeric keys (except special keys)
+                      if (
+                        !/[0-9]/.test(e.key) &&
+                        !["Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab"].includes(e.key)
+                      ) {
+                        e.preventDefault();
+                      }
+                    }}
                   />
                 </div>
                 {pinError && (
@@ -354,7 +400,10 @@ export default function Settings() {
                       id="webhook-url"
                       type="url"
                       value={webhookUrl}
-                      onChange={(e) => setWebhookUrl(e.target.value)}
+                      onChange={(e) => {
+                        setWebhookUrl(e.target.value);
+                        setWebhookError(""); // Clear error on change
+                      }}
                       placeholder="https://discord.com/api/webhooks/..."
                       className="h-11 border-2 focus:ring-2 focus:ring-primary/20"
                     />
@@ -366,6 +415,13 @@ export default function Settings() {
                       Save
                     </Button>
                   </div>
+                  {webhookError && (
+                    <div className="rounded-lg bg-destructive/10 p-3 border border-destructive/20">
+                      <p className="text-sm text-destructive font-medium">
+                        {webhookError}
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 <Button

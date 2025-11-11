@@ -20,8 +20,9 @@ pub struct WebhookMessage {
 // State to track blocked apps
 pub struct BlockedApps(Arc<Mutex<HashMap<String, bool>>>);
 
-// State to track webhook rate limiting (webhook_url -> last_send_timestamp)
-pub struct WebhookRateLimiter(Arc<Mutex<HashMap<String, std::time::Instant>>>);
+// State to track webhook rate limiting with message deduplication
+// Key: (webhook_url, message_hash) -> last_send_timestamp
+pub struct WebhookRateLimiter(Arc<Mutex<HashMap<(String, String), std::time::Instant>>>);
 
 // Process cache to avoid redundant scans
 pub struct ProcessCache {
@@ -54,6 +55,11 @@ impl ProcessCache {
         let processes = fetch_running_processes()?;
         *cache = Some((processes.clone(), now));
         Ok(processes)
+    }
+    
+    fn invalidate(&self) {
+        let mut cache = self.cache.lock().unwrap();
+        *cache = None;
     }
 }
 
@@ -101,6 +107,12 @@ fn fetch_running_processes() -> Result<Vec<AppInfo>, String> {
 #[tauri::command]
 async fn get_running_processes(cache: State<'_, ProcessCache>) -> Result<Vec<AppInfo>, String> {
     cache.get_or_refresh()
+}
+
+#[tauri::command]
+async fn invalidate_process_cache(cache: State<'_, ProcessCache>) -> Result<(), String> {
+    cache.invalidate();
+    Ok(())
 }
 
 // Helper function to scan a directory for executables (non-recursive for performance)
@@ -522,15 +534,25 @@ async fn send_discord_webhook(
     rate_limiter: State<'_, WebhookRateLimiter>,
 ) -> Result<bool, String> {
     use std::time::{Duration, Instant};
+    use std::collections::hash_map::DefaultHasher;
+    use std::hash::{Hash, Hasher};
     
-    const MIN_INTERVAL: Duration = Duration::from_secs(5); // 5 seconds between webhooks
+    const MIN_INTERVAL: Duration = Duration::from_secs(5); // 5 seconds between any webhooks
+    const MIN_DUPLICATE_INTERVAL: Duration = Duration::from_secs(30); // 30 seconds for identical messages
+    
+    // Create a simple hash of the message for deduplication
+    let mut hasher = DefaultHasher::new();
+    message.hash(&mut hasher);
+    let message_hash = format!("{:x}", hasher.finish());
     
     // Check rate limit
     {
         let mut limiter = rate_limiter.0.lock().unwrap();
         let now = Instant::now();
         
-        if let Some(last_send) = limiter.get(&webhook_url) {
+        // Check global rate limit for this webhook URL (any message)
+        let global_key = (webhook_url.clone(), String::new());
+        if let Some(last_send) = limiter.get(&global_key) {
             let elapsed = now.duration_since(*last_send);
             if elapsed < MIN_INTERVAL {
                 let remaining = MIN_INTERVAL - elapsed;
@@ -541,8 +563,25 @@ async fn send_discord_webhook(
             }
         }
         
-        // Update last send time
-        limiter.insert(webhook_url.clone(), now);
+        // Check duplicate message rate limit
+        let duplicate_key = (webhook_url.clone(), message_hash.clone());
+        if let Some(last_send) = limiter.get(&duplicate_key) {
+            let elapsed = now.duration_since(*last_send);
+            if elapsed < MIN_DUPLICATE_INTERVAL {
+                let remaining = MIN_DUPLICATE_INTERVAL - elapsed;
+                return Err(format!(
+                    "Duplicate message: Please wait {} seconds before sending the same message again",
+                    remaining.as_secs()
+                ));
+            }
+        }
+        
+        // Update last send times
+        limiter.insert(global_key, now);
+        limiter.insert(duplicate_key, now);
+        
+        // Cleanup old entries (older than 5 minutes) to prevent unbounded growth
+        limiter.retain(|_, &mut timestamp| now.duration_since(timestamp) < Duration::from_secs(300));
     }
     
     let client = reqwest::Client::new();
@@ -618,14 +657,7 @@ async fn get_browser_processes() -> Result<Vec<AppInfo>, String> {
 fn verify_pin(stored_hash: String, input_pin: String) -> Result<bool, String> {
     use argon2::{Argon2, PasswordHash, PasswordVerifier};
     
-    // Check if this is an old MD5 hash (32 hex characters)
-    if stored_hash.len() == 32 && stored_hash.chars().all(|c| c.is_ascii_hexdigit()) {
-        // Legacy MD5 verification for backward compatibility
-        let input_hash = format!("{:x}", md5::compute(input_pin.as_bytes()));
-        return Ok(input_hash == stored_hash);
-    }
-    
-    // New Argon2 verification
+    // Only support Argon2 hashing for security
     let parsed_hash = PasswordHash::new(&stored_hash)
         .map_err(|e| format!("Invalid password hash: {}", e))?;
     
@@ -876,6 +908,7 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             get_running_processes,
+            invalidate_process_cache,
             get_installed_apps,
             browse_for_executable,
             kill_process,
